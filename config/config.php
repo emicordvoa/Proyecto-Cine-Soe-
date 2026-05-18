@@ -9,8 +9,14 @@ date_default_timezone_set('America/La_Paz');
 
 define('APP_NAME', 'Cine SOE');
 define('ROOT_PATH', dirname(__DIR__));
-define('BASE_PATH', '/' . rawurlencode(basename(ROOT_PATH)));
 
+$docRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT'] ?? '');
+$rootPath = str_replace('\\', '/', ROOT_PATH);
+$basePath = str_replace($docRoot, '', $rootPath);
+if ($basePath === '/' || $basePath === '\\' || $basePath === '.') {
+    $basePath = '';
+}
+define('BASE_PATH', rtrim($basePath, '/'));
 // Load .env file if it exists (for local development)
 if (file_exists(ROOT_PATH . '/.env')) {
     $lines = file(ROOT_PATH . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
