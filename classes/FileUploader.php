@@ -60,6 +60,95 @@ class FileUploader
         return $name;
     }
 
+    public static function qrPago(array $file, int $usuarioId): string
+    {
+        if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+            throw new RuntimeException('No se pudo subir el QR de pago.');
+        }
+
+        if ((int) ($file['size'] ?? 0) <= 0) {
+            throw new RuntimeException('El QR esta vacio.');
+        }
+
+        if ((int) $file['size'] > MAX_UPLOAD_SIZE) {
+            throw new RuntimeException('El QR supera el maximo de 5MB.');
+        }
+
+        $tmpName = (string) ($file['tmp_name'] ?? '');
+        if ($tmpName === '' || !is_file($tmpName) || !is_readable($tmpName)) {
+            throw new RuntimeException('No se pudo leer el QR.');
+        }
+
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->file($tmpName);
+        if (!in_array($mime, ['image/jpeg', 'image/png'], true)) {
+            throw new RuntimeException('Formato no permitido. Sube el QR en JPG o PNG.');
+        }
+
+        self::validarDimensionesImagen($tmpName);
+
+        $extension = $mime === 'image/jpeg' ? 'jpg' : 'png';
+        $name = sprintf('vendedor_%d_%s.%s', $usuarioId, bin2hex(random_bytes(8)), $extension);
+        $destination = UPLOAD_PATH . '/qr-pagos/' . $name;
+
+        if (!is_dir(dirname($destination)) && !mkdir(dirname($destination), 0775, true)) {
+            throw new RuntimeException('No se pudo preparar la carpeta de QR de pago.');
+        }
+
+        if ($mime === 'image/jpeg') {
+            self::guardarJpegSinMetadata($tmpName, $destination);
+        } else {
+            self::guardarPngSinMetadata($tmpName, $destination);
+        }
+
+        return $name;
+    }
+
+    public static function imagenPelicula(array $file, string $titulo): string
+    {
+        if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+            throw new RuntimeException('No se pudo subir la imagen de cartelera.');
+        }
+
+        if ((int) ($file['size'] ?? 0) <= 0) {
+            throw new RuntimeException('La imagen de cartelera esta vacia.');
+        }
+
+        if ((int) $file['size'] > MAX_UPLOAD_SIZE) {
+            throw new RuntimeException('La imagen supera el maximo de 5MB.');
+        }
+
+        $tmpName = (string) ($file['tmp_name'] ?? '');
+        if ($tmpName === '' || !is_file($tmpName) || !is_readable($tmpName)) {
+            throw new RuntimeException('No se pudo leer la imagen.');
+        }
+
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->file($tmpName);
+        if (!in_array($mime, ['image/jpeg', 'image/png'], true)) {
+            throw new RuntimeException('Formato no permitido. Sube la imagen en JPG o PNG.');
+        }
+
+        self::validarDimensionesImagen($tmpName);
+
+        $slug = self::slug($titulo);
+        $extension = $mime === 'image/jpeg' ? 'jpg' : 'png';
+        $name = sprintf('%s-%s.%s', $slug, bin2hex(random_bytes(4)), $extension);
+        $destination = ROOT_PATH . '/assets/img/' . $name;
+
+        if (!is_dir(dirname($destination)) && !mkdir(dirname($destination), 0775, true)) {
+            throw new RuntimeException('No se pudo preparar la carpeta de imagenes.');
+        }
+
+        if ($mime === 'image/jpeg') {
+            self::guardarJpegSinMetadata($tmpName, $destination);
+        } else {
+            self::guardarPngSinMetadata($tmpName, $destination);
+        }
+
+        return $name;
+    }
+
     private static function validarDimensionesImagen(string $source): void
     {
         $imageInfo = getimagesize($source);
@@ -75,6 +164,16 @@ class FileUploader
         if ($width > self::MAX_IMAGE_SIDE || $height > self::MAX_IMAGE_SIDE || ($width * $height) > self::MAX_IMAGE_PIXELS) {
             throw new RuntimeException('La imagen es demasiado grande o no parece un comprobante normal.');
         }
+    }
+
+    private static function slug(string $value): string
+    {
+        $value = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value) ?: $value;
+        $value = strtolower($value);
+        $value = preg_replace('/[^a-z0-9]+/', '-', $value) ?? '';
+        $value = trim($value, '-');
+
+        return $value !== '' ? substr($value, 0, 60) : 'pelicula';
     }
 
     private static function guardarJpegSinMetadata(string $source, string $destination): void
@@ -224,9 +323,7 @@ class FileUploader
 
         $forbidden = [
             '/JavaScript', '/JS', '/AA', '/OpenAction', '/Launch', '/EmbeddedFile',
-            '/Filespec', '/RichMedia', '/Encrypt', '/AcroForm', '/XFA', '/Metadata',
-            '/Info', '/Title', '/Author', '/Subject', '/Keywords', '/Creator',
-            '/Producer', '/CreationDate', '/ModDate',
+            '/Filespec', '/RichMedia', '/Encrypt', '/AcroForm', '/XFA',
         ];
 
         foreach ($forbidden as $needle) {

@@ -64,7 +64,8 @@ class Compra
                     vendedor.nombre_completo AS vendedor_nombre,
                     vendedor.correo AS vendedor_correo,
                     vendedor.codigo_referencia AS vendedor_codigo,
-                    vendedor.whatsapp AS vendedor_whatsapp
+                    vendedor.whatsapp AS vendedor_whatsapp,
+                    vendedor.qr_pago_imagen AS vendedor_qr_pago_imagen
              FROM compras c
              JOIN clientes cl ON cl.id = c.id_cliente
              JOIN peliculas p ON p.id = c.id_pelicula
@@ -83,7 +84,7 @@ class Compra
         }
 
         $stmt = Database::getConnection()->prepare(
-            "SELECT id, nombre_completo, correo, whatsapp, codigo_referencia
+            "SELECT id, nombre_completo, correo, whatsapp, codigo_referencia, qr_pago_imagen
              FROM usuarios
              WHERE codigo_referencia = ? AND rol IN ('vendedor','admin') AND estado = 'activo'
              LIMIT 1"

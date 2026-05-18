@@ -213,6 +213,7 @@ class Auth
             'rol' => $user['rol'],
             'codigo_referencia' => $user['codigo_referencia'],
             'whatsapp' => $user['whatsapp'] ?? null,
+            'qr_pago_imagen' => $user['qr_pago_imagen'] ?? null,
         ];
     }
 }

@@ -142,6 +142,7 @@ document.querySelectorAll('input,select,textarea').forEach(i=>{i.addEventListene
 const movieSelect=document.getElementById('movieSelect');
 const quantity=document.getElementById('quantity');
 const totalPrice=document.getElementById('totalPrice');
+const totalPrice2=document.getElementById('totalPrice2');
 const availableText=document.getElementById('availableText');
 function updateTotal(){
   if(!movieSelect||!quantity||!totalPrice)return;
@@ -151,6 +152,7 @@ function updateTotal(){
   let qty=Math.max(1,Math.min(10,parseInt(quantity.value||'1',10)));
   qty=Math.min(qty,avail||1);quantity.value=qty;quantity.max=Math.min(10,avail||1);
   totalPrice.textContent='Bs '+(price*qty).toFixed(2);
+  if(totalPrice2)totalPrice2.textContent=totalPrice.textContent;
   if(availableText)availableText.textContent=avail+' disponibles';
 }
 document.querySelectorAll('[data-qty]').forEach(b=>b.addEventListener('click',()=>{
@@ -169,6 +171,13 @@ if(fileInput&&preview){
     if(f&&f.type.startsWith('image/')){preview.src=URL.createObjectURL(f);if(uploadZone)uploadZone.classList.add('has-image');}
   };
   fileInput.addEventListener('change',()=>handleFile(fileInput.files[0]));
+  document.querySelectorAll('[data-file-submit]').forEach(btn=>btn.addEventListener('click',e=>{
+    const target=document.getElementById(btn.dataset.fileSubmit||'');
+    if(target&&target.type==='file'&&!target.files.length){
+      e.preventDefault();
+      target.click();
+    }
+  }));
   if(uploadZone){
     uploadZone.addEventListener('dragover',e=>{e.preventDefault();uploadZone.classList.add('dragover');});
     uploadZone.addEventListener('dragleave',()=>uploadZone.classList.remove('dragover'));

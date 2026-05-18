@@ -19,6 +19,7 @@ CREATE TABLE usuarios (
   rol ENUM('admin','vendedor','validador') NOT NULL DEFAULT 'vendedor',
   codigo_referencia CHAR(12) NOT NULL UNIQUE,
   whatsapp VARCHAR(20) NULL,
+  qr_pago_imagen VARCHAR(255) NULL,
   estado ENUM('activo','inactivo','eliminado') NOT NULL DEFAULT 'activo',
   fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   fecha_actualizacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -134,11 +135,7 @@ CREATE TABLE configuracion (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO usuarios (nombre_completo, correo, password_hash, rol, codigo_referencia, whatsapp) VALUES
-('Administrador SOE', 'admin@soe.edu.bo', '$2y$10$sy.V6AZkDQWhCnhE1PYWGu1XciJIuxt3Y3HGFw03CdtO8YOaTIVcW', 'admin', 'ADMIN2026', '59170000000'),
-('Vendedor SOE 1', 'vendedor1@soe.edu.bo', '$2y$10$sy.V6AZkDQWhCnhE1PYWGu1XciJIuxt3Y3HGFw03CdtO8YOaTIVcW', 'vendedor', 'VENDSOE001', '59170000001'),
-('Vendedor SOE 2', 'vendedor2@soe.edu.bo', '$2y$10$sy.V6AZkDQWhCnhE1PYWGu1XciJIuxt3Y3HGFw03CdtO8YOaTIVcW', 'vendedor', 'VENDSOE002', '59170000002'),
-('Validador Puerta', 'validador@soe.edu.bo', '$2y$10$sy.V6AZkDQWhCnhE1PYWGu1XciJIuxt3Y3HGFw03CdtO8YOaTIVcW', 'validador', 'VALIDA2026', '59170000003'),
-('Daniela Emilse Cordova Villca', 'cvd2019198@est.univalle.edu', '$2y$10$Chjk0fM7B8iURYaxa8HlAedoIuujbXFc8K6iIX1A3.HLnppN.thHq', 'admin', 'DANIELA2026', '59177478776');
+('Administrador SOE', 'admin@soe.edu.bo', '$2y$10$VAPgcxv6di85LbNcPZlgHOVo/GaUWhFb4yDIo5yyU.x3N6vM0JHA2', 'admin', 'ADMIN2026', '59170000000');
 
 INSERT INTO peliculas (titulo, descripcion, imagen, genero, duracion_min, fecha_funcion, hora_funcion, precio_entrada, capacidad, estado) VALUES
 ('Interestelar', 'Viaje espacial, drama humano y ciencia ficcion para abrir la cartelera SOE.', 'interestelar.jpg', 'Ciencia ficcion', 169, '2026-05-13', '18:00:00', 20.00, 100, 'activo'),
@@ -151,7 +148,7 @@ INSERT INTO configuracion (clave, valor, descripcion, tipo) VALUES
 ('sitio_url','http://localhost/Soe%20Cine','URL base local','texto'),
 ('cuenta_bancaria','Banco Union - 1234567890','Cuenta para transferencia','texto'),
 ('titular_cuenta','SOE Universidad','Titular del pago','texto'),
-('qr_bancario_imagen','qr-bancario.png','Imagen QR bancaria','texto'),
+('qr_bancario_imagen','qr-bancario.jpeg','Imagen QR bancaria','texto'),
 ('max_entradas_por_compra','10','Maximo por compra','numero'),
 ('smtp_host','smtp.gmail.com','Servidor SMTP real para enviar correos','texto'),
 ('smtp_puerto','587','Puerto SMTP','numero'),

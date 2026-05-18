@@ -188,7 +188,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <script>
 // Sync total to step 3
 const tp=document.getElementById('totalPrice'),tp2=document.getElementById('totalPrice2');
-if(tp&&tp2){new MutationObserver(()=>tp2.textContent=tp.textContent).observe(tp,{childList:true,characterData:true,subtree:true});}
+if(tp&&tp2){
+    tp2.textContent=tp.textContent;
+    new MutationObserver(()=>tp2.textContent=tp.textContent).observe(tp,{childList:true,characterData:true,subtree:true});
+}
 </script>
 </body>
 </html>
