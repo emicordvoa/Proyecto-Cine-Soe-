@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $accion = $_POST['accion'] ?? '';
         $compra = $id ? Compra::detalle($id) : null;
         if (!$compra) throw new RuntimeException('Compra no encontrada.');
-        if ($filtroVendedorId && (int) $compra['id_usuario_vendedor'] !== $filtroVendedorId) throw new RuntimeException('Solo puedes validar compras de este vendedor.');
+        if ($filtroVendedorId && (int) $compra['id_usuario_vendedor'] !== $filtroVendedorId) throw new RuntimeException('Solo puedes validar compras de este Staff SOE.');
 
         if ($accion === 'aprobar') {
             if (empty($compra['comprobante_nombre'])) throw new RuntimeException('Sin comprobante.');

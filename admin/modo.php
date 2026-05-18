@@ -17,10 +17,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $vendor = $stmt->fetch();
     if ($vendor) {
         $_SESSION['view_vendor_id'] = (int) $vendor['id'];
-        $_SESSION['view_vendor_name'] = 'Vendedor: ' . $vendor['nombre_completo'];
+        $_SESSION['view_vendor_name'] = 'Staff SOE: ' . $vendor['nombre_completo'];
         redirect('index.php');
     }
-    flash('danger', 'Vendedor no encontrado.');
+    flash('danger', 'Staff SOE no encontrado.');
     redirect('modo.php');
 }
 
@@ -28,15 +28,15 @@ $vendedores = $pdo->query("SELECT id, nombre_completo, codigo_referencia, rol FR
 admin_header('Cambiar vista');
 ?>
 <div class="glass admin-panel">
-    <p class="text-muted mb-3">Como admin puedes ver todo o filtrar como un vendedor específico, sin cerrar sesión.</p>
+    <p class="text-muted mb-3">Como admin puedes ver todo o filtrar como un Staff SOE específico, sin cerrar sesión.</p>
     <form method="post">
         <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
         <div class="form-group mb-3">
-            <label class="form-label">Ver como vendedor</label>
+            <label class="form-label">Ver como Staff SOE</label>
             <select class="form-input form-select" name="vendor_id">
                 <option value="">Ver todo como admin</option>
                 <?php foreach ($vendedores as $v): ?>
-                    <option value="<?= (int) $v['id'] ?>"><?= e($v['nombre_completo']) ?> (<?= e($v['rol']) ?>) — <?= e($v['codigo_referencia']) ?></option>
+                    <option value="<?= (int) $v['id'] ?>"><?= e($v['nombre_completo']) ?> (<?= e($v['rol'] === 'vendedor' ? 'Staff SOE' : $v['rol']) ?>) — <?= e($v['codigo_referencia']) ?></option>
                 <?php endforeach; ?>
             </select>
         </div>

@@ -21,8 +21,8 @@ if (admin_is_admin() && !$viewVendorId) {
 admin_header($viewVendorId ? 'Reporte filtrado' : (admin_is_vendor() ? 'Mis ventas' : 'Reportes'));
 ?>
 <div class="glass admin-panel">
-    <h2><?= admin_is_admin()&&!$viewVendorId?'Ranking vendedores':'Resumen' ?></h2>
-    <div class="table-wrap"><table class="table"><thead><tr><th>Vendedor</th><th>Entradas</th><th>Ingresos</th></tr></thead><tbody>
+    <h2><?= admin_is_admin()&&!$viewVendorId?'Ranking Staff SOE':'Resumen' ?></h2>
+    <div class="table-wrap"><table class="table"><thead><tr><th>Staff SOE</th><th>Entradas</th><th>Ingresos</th></tr></thead><tbody>
     <?php foreach ($vendedores as $v): ?><tr><td><?= e($v['vendedor']) ?></td><td><strong><?= (int)$v['entradas'] ?></strong></td><td>Bs <?= number_format((float)$v['ingresos'],2) ?></td></tr><?php endforeach; ?>
     </tbody></table></div>
 </div>

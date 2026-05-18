@@ -50,6 +50,48 @@ function e(?string $value): string
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 }
 
+function clean_full_name(string $value): string
+{
+    $value = preg_replace('/[\x00-\x1F\x7F]/', '', strip_tags(trim($value))) ?? '';
+    return preg_replace('/\s+/', ' ', $value) ?? '';
+}
+
+function is_full_name(string $value): bool
+{
+    $parts = preg_split('/\s+/', trim($value), -1, PREG_SPLIT_NO_EMPTY);
+    if (!$parts || count($parts) < 2) {
+        return false;
+    }
+
+    foreach ($parts as $part) {
+        $length = function_exists('mb_strlen') ? mb_strlen($part, 'UTF-8') : strlen($part);
+        if ($length < 2) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function combine_name_parts(string $nombre, string $apellido): string
+{
+    $nombre = clean_full_name($nombre);
+    $apellido = clean_full_name($apellido);
+
+    return trim($nombre . ' ' . $apellido);
+}
+
+function split_name_parts(?string $value): array
+{
+    $parts = preg_split('/\s+/', clean_full_name((string) $value), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+    if (count($parts) <= 1) {
+        return [$parts[0] ?? '', ''];
+    }
+
+    $apellido = array_pop($parts);
+    return [implode(' ', $parts), $apellido];
+}
+
 function csrf_token(): string
 {
     if (empty($_SESSION['csrf_token'])) {

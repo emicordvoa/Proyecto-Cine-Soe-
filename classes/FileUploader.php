@@ -36,6 +36,11 @@ class FileUploader
         if (!isset(self::ALLOWED_MIME[$mime])) {
             throw new RuntimeException('Formato no permitido. Usa JPG, PNG o PDF.');
         }
+        
+        $extension = strtolower(pathinfo((string) ($file['name'] ?? ''), PATHINFO_EXTENSION));
+        if (!in_array($extension, ['jpg', 'jpeg', 'png', 'pdf'], true)) {
+            throw new RuntimeException('Extensión de archivo no permitida.');
+        }
 
         $name = sprintf('compra_%d_%s.%s', $compraId, bin2hex(random_bytes(8)), self::ALLOWED_MIME[$mime]);
         $destination = UPLOAD_PATH . '/comprobantes/pendientes/' . $name;
@@ -85,6 +90,11 @@ class FileUploader
             throw new RuntimeException('Formato no permitido. Sube el QR en JPG o PNG.');
         }
 
+        $extensionOriginal = strtolower(pathinfo((string) ($file['name'] ?? ''), PATHINFO_EXTENSION));
+        if (!in_array($extensionOriginal, ['jpg', 'jpeg', 'png'], true)) {
+            throw new RuntimeException('Extensión de archivo no permitida.');
+        }
+
         self::validarDimensionesImagen($tmpName);
 
         $extension = $mime === 'image/jpeg' ? 'jpg' : 'png';
@@ -127,6 +137,11 @@ class FileUploader
         $mime = $finfo->file($tmpName);
         if (!in_array($mime, ['image/jpeg', 'image/png'], true)) {
             throw new RuntimeException('Formato no permitido. Sube la imagen en JPG o PNG.');
+        }
+        
+        $extensionOriginal = strtolower(pathinfo((string) ($file['name'] ?? ''), PATHINFO_EXTENSION));
+        if (!in_array($extensionOriginal, ['jpg', 'jpeg', 'png'], true)) {
+            throw new RuntimeException('Extensión de archivo no permitida.');
         }
 
         self::validarDimensionesImagen($tmpName);

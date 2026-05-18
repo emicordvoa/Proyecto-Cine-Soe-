@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!verify_csrf($_POST['csrf'] ?? null)) throw new RuntimeException('Sesión expirada.');
         $accion = $_POST['accion'] ?? 'guardar'; $id = filter_input(INPUT_POST, 'id', FILTER_VALIDATE_INT);
         if ($accion === 'eliminar' && $id) { $pdo->prepare("UPDATE usuarios SET estado='eliminado' WHERE id=?")->execute([$id]); flash('success','Usuario eliminado.'); redirect('usuarios.php'); }
-        $nombre = trim((string)($_POST['nombre_completo']??'')); $correo = filter_var($_POST['correo']??'', FILTER_VALIDATE_EMAIL);
+        $nombre = combine_name_parts((string)($_POST['nombre']??''), (string)($_POST['apellido']??'')); $correo = filter_var($_POST['correo']??'', FILTER_VALIDATE_EMAIL);
         $rol = in_array($_POST['rol']??'', ['admin','vendedor','validador'],true)?$_POST['rol']:'vendedor';
         $waPais = preg_replace('/\D+/','',(string)($_POST['whatsapp_pais']??'591'));
         $waLocal = preg_replace('/\D+/','',(string)($_POST['whatsapp']??''));
@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $codigo = strtoupper(preg_replace('/[^A-Za-z0-9]/','',(string)($_POST['codigo_referencia']??'')));
         $estado = in_array($_POST['estado']??'activo',['activo','inactivo'],true)?$_POST['estado']:'activo';
         $password = (string)($_POST['password']??'');
-        if ($nombre===''||!$correo) throw new RuntimeException('Nombre y correo obligatorios.');
+        if (!is_full_name($nombre)||!$correo) throw new RuntimeException('Nombre, apellido y correo obligatorios.');
         if ($id && (strlen($codigo)<6||strlen($codigo)>12)) throw new RuntimeException('Código: 6-12 caracteres.');
         if (!$id && strlen($password)<6) throw new RuntimeException('Contraseña mínimo 6 caracteres.');
         if ($waLocal!=='' && (!isset($phoneCountries[$waPais])||strlen($waLocal)<5||strlen($waLocal)>15)) throw new RuntimeException('WhatsApp inválido.');
@@ -46,6 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $editarId = filter_input(INPUT_GET,'editar',FILTER_VALIDATE_INT); $editar=null;
 if ($editarId){$stmt=$pdo->prepare("SELECT * FROM usuarios WHERE id=? AND estado!='eliminado'");$stmt->execute([$editarId]);$editar=$stmt->fetch();}
 [$waPaisActual,$waLocalActual]=separar_telefono($editar['whatsapp']??'',$phoneCountries);
+[$nombreActual,$apellidoActual]=split_name_parts($editar['nombre_completo']??'');
 $usuarios=$pdo->query("SELECT * FROM usuarios WHERE estado!='eliminado' ORDER BY rol,nombre_completo")->fetchAll();
 admin_header('Usuarios SOE');
 ?>
@@ -54,12 +55,13 @@ admin_header('Usuarios SOE');
     <form method="post">
         <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
         <input type="hidden" name="id" value="<?= (int)($editar['id']??0) ?>">
-        <div class="form-row form-row-2 mb-2">
-            <div class="form-group"><label class="form-label">Nombre completo</label><input class="form-input" name="nombre_completo" required minlength="3" value="<?= e($editar['nombre_completo']??'') ?>"></div>
+        <div class="form-row form-row-3 mb-2">
+            <div class="form-group"><label class="form-label">Nombre</label><input class="form-input" name="nombre" required minlength="2" value="<?= e($nombreActual) ?>"></div>
+            <div class="form-group"><label class="form-label">Apellido</label><input class="form-input" name="apellido" required minlength="2" value="<?= e($apellidoActual) ?>"></div>
             <div class="form-group"><label class="form-label">Correo</label><input class="form-input" type="email" name="correo" required value="<?= e($editar['correo']??'') ?>"></div>
         </div>
         <div class="form-row form-row-3 mb-2">
-            <div class="form-group"><label class="form-label">Rol</label><select class="form-input form-select" name="rol"><option value="vendedor">Vendedor</option><option value="validador" <?=($editar['rol']??'')==='validador'?'selected':''?>>Validador</option><option value="admin" <?=($editar['rol']??'')==='admin'?'selected':''?>>Admin</option></select></div>
+            <div class="form-group"><label class="form-label">Rol</label><select class="form-input form-select" name="rol"><option value="vendedor">Staff SOE</option><option value="validador" <?=($editar['rol']??'')==='validador'?'selected':''?>>Validador</option><option value="admin" <?=($editar['rol']??'')==='admin'?'selected':''?>>Admin</option></select></div>
             <div class="form-group"><label class="form-label">Código ref.</label><input class="form-input" name="codigo_referencia" value="<?= e($editar['codigo_referencia']??'') ?>" placeholder="Auto" <?= $editar?'':'readonly' ?>></div>
             <div class="form-group"><label class="form-label">WhatsApp</label>
                 <div class="phone-field">
@@ -84,7 +86,7 @@ admin_header('Usuarios SOE');
         <?php foreach ($usuarios as $u): ?>
             <tr>
                 <td><strong><?= e($u['nombre_completo']) ?></strong><br><span class="text-muted text-sm"><?= e($u['correo']) ?></span></td>
-                <td><span class="badge badge-<?= $u['rol']==='admin'?'purple':($u['rol']==='vendedor'?'info':'warning') ?>"><?= e($u['rol']) ?></span></td>
+                <td><span class="badge badge-<?= $u['rol']==='admin'?'purple':($u['rol']==='vendedor'?'info':'warning') ?>"><?= e($u['rol'] === 'vendedor' ? 'Staff SOE' : $u['rol']) ?></span></td>
                 <td><code><?= e($u['codigo_referencia']) ?></code></td>
                 <td class="text-sm"><?= e($u['whatsapp']??'') ?></td>
                 <td class="flex gap-1">

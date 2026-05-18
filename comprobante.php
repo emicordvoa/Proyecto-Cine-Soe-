@@ -57,10 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $tiempoRestante = Compra::tiempoRestanteSegundos($compra);
 $waVendedorCompra = $_SESSION['wa_vendedor_compra_' . (int) $compra['id']] ?? null;
 $comprobanteUrl = $compra['comprobante_nombre'] ? 'uploads/comprobantes/pendientes/' . rawurlencode($compra['comprobante_nombre']) : '';
-$qrPagoVendedor = basename((string) ($compra['vendedor_qr_pago_imagen'] ?? ''));
-$qrPagoEsVendedor = $qrPagoVendedor !== '' && is_file(UPLOAD_PATH . '/qr-pagos/' . $qrPagoVendedor);
 $qrPagoGeneral = 'assets/img/qr-bancario.jpeg';
-$qrPagoUrl = $qrPagoEsVendedor ? 'uploads/qr-pagos/' . rawurlencode($qrPagoVendedor) : $qrPagoGeneral;
 ?>
 <!doctype html>
 <html lang="es">
@@ -97,8 +94,8 @@ $qrPagoUrl = $qrPagoEsVendedor ? 'uploads/qr-pagos/' . rawurlencode($qrPagoVende
             <?php endif; ?>
 
             <div class="bank-qr mt-3">
-                <?php if ($qrPagoEsVendedor || file_exists(__DIR__ . '/' . $qrPagoGeneral)): ?>
-                    <img src="<?= e($qrPagoUrl) ?>" alt="<?= $qrPagoEsVendedor ? 'QR de pago del vendedor' : 'QR bancario' ?>">
+                <?php if (file_exists(__DIR__ . '/' . $qrPagoGeneral)): ?>
+                    <img src="<?= e($qrPagoGeneral) ?>" alt="QR bancario">
                 <?php else: ?>
                     <div style="padding:2rem;text-align:center;font-weight:900;color:#111">QR Bancario SOE</div>
                 <?php endif; ?>
@@ -106,18 +103,13 @@ $qrPagoUrl = $qrPagoEsVendedor ? 'uploads/qr-pagos/' . rawurlencode($qrPagoVende
 
             <ul class="bank-list mt-3">
                 <li><strong>Monto:</strong> Bs <?= number_format((float) $compra['monto_total'], 2) ?></li>
-                <?php if ($qrPagoEsVendedor): ?>
-                    <li><strong>QR de pago:</strong> <?= e($compra['vendedor_nombre'] ?? 'Vendedor SOE') ?></li>
-                    <li><strong>Importante:</strong> paga usando el QR mostrado arriba.</li>
-                <?php else: ?>
-                    <li><strong>Cuenta:</strong> Banco Union — 1234567890</li>
-                    <li><strong>Titular:</strong> SOE Universidad</li>
-                <?php endif; ?>
-                <li><strong>Vendedor:</strong> <?= e($compra['vendedor_nombre'] ?? 'Venta online') ?> <?= $compra['vendedor_whatsapp'] ? '(' . e($compra['vendedor_whatsapp']) . ')' : '' ?></li>
+                <li><strong>Cuenta:</strong> Banco Union &mdash; 1234567890</li>
+                <li><strong>Titular:</strong> SOE Universidad</li>
+                <li><strong>Staff SOE:</strong> <?= e($compra['vendedor_nombre'] ?? 'Venta online') ?> <?= $compra['vendedor_whatsapp'] ? '(' . e($compra['vendedor_whatsapp']) . ')' : '' ?></li>
             </ul>
 
             <?php if ($waVendedorCompra): ?>
-                <a class="btn btn-success btn-block mt-3" target="_blank" rel="noopener" href="<?= e($waVendedorCompra) ?>">Notificar al vendedor</a>
+                <a class="btn btn-success btn-block mt-3" target="_blank" rel="noopener" href="<?= e($waVendedorCompra) ?>">Notificar al Staff SOE</a>
             <?php endif; ?>
         </div>
 

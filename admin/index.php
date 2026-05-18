@@ -27,7 +27,7 @@ $top = $pdo->query(
 )->fetchAll();
 
 $referido = BASE_URL . '/index.php?ref=' . Auth::user()['codigo_referencia'];
-admin_header($viewVendorId ? 'Ventas del vendedor' : 'Dashboard');
+admin_header($viewVendorId ? 'Ventas del Staff SOE' : 'Dashboard');
 ?>
 
 <!-- Stats -->
@@ -98,7 +98,7 @@ admin_header($viewVendorId ? 'Ventas del vendedor' : 'Dashboard');
 
 <?php if (admin_is_admin() && !$viewVendorId): ?>
 <div class="glass admin-panel">
-    <h2>Top vendedores</h2>
+    <h2>Top Staff SOE</h2>
     <?php foreach ($top as $item): ?>
         <div class="flex items-center justify-between" style="padding:.5rem 0;border-bottom:1px solid var(--line)">
             <span><?= e($item['vendedor']) ?></span>

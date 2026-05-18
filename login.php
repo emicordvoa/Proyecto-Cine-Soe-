@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="text-center mb-3">
             <div class="brand-icon" style="margin:0 auto .8rem;width:52px;height:36px;font-size:.9rem">SOE</div>
             <h1 style="font-size:1.6rem;font-weight:900;letter-spacing:-.03em">Iniciar sesión</h1>
-            <p class="text-muted text-sm">Acceso para administradores, vendedores y validadores.</p>
+            <p class="text-muted text-sm">Acceso para administradores.</p>
         </div>
 
         <?php if ($mensaje): ?>
@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
             <div class="form-group">
                 <label class="form-label" for="correo">Correo electrónico</label>
-                <input class="form-input" id="correo" type="email" name="correo" value="<?= e($correoRecordado) ?>" placeholder="admin@soe.edu.bo" required>
+                <input class="form-input" id="correo" type="email" name="correo" value="<?= e($correoRecordado) ?>" placeholder="Tu Correo" required>
             </div>
             <div class="form-group">
                 <label class="form-label" for="passwordInput">Contraseña</label>

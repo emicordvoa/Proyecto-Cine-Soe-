@@ -1,24 +1,28 @@
 <?php
 require __DIR__ . '/_bootstrap.php';
-require_once __DIR__ . '/../classes/FileUploader.php';
-
-function borrar_qr_pago_anterior(?string $archivo): void
-{
-    $archivo = basename((string) $archivo);
-    if ($archivo === '') {
-        return;
-    }
-
-    $ruta = UPLOAD_PATH . '/qr-pagos/' . $archivo;
-    if (is_file($ruta)) {
-        @unlink($ruta);
-    }
-}
 
 $pdo = Database::getConnection();
 $stmt = $pdo->prepare("SELECT * FROM usuarios WHERE id = ?");
 $stmt->execute([Auth::id()]);
 $usuario = $stmt->fetch();
+$phoneCountries = [
+    '591' => 'Bolivia +591','54' => 'Argentina +54','55' => 'Brasil +55',
+    '56' => 'Chile +56','57' => 'Colombia +57','593' => 'Ecuador +593',
+    '595' => 'Paraguay +595','51' => 'Peru +51','598' => 'Uruguay +598',
+    '58' => 'Venezuela +58','52' => 'Mexico +52','1' => 'EE.UU./Canada +1','34' => 'España +34',
+];
+
+function separar_telefono_perfil(?string $telefono, array $paises): array {
+    $digits = preg_replace('/\D+/', '', (string) $telefono);
+    $codes = array_keys($paises);
+    usort($codes, fn($a, $b) => strlen($b) <=> strlen($a));
+    foreach ($codes as $code) {
+        if (substr($digits, 0, strlen($code)) === $code && strlen($digits) > strlen($code)) {
+            return [$code, substr($digits, strlen($code))];
+        }
+    }
+    return ['591', $digits];
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
@@ -26,31 +30,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             throw new RuntimeException('Sesión expirada.');
         }
 
-        $nombre = trim((string) ($_POST['nombre_completo'] ?? ''));
+        $nombre = combine_name_parts((string) ($_POST['nombre'] ?? ''), (string) ($_POST['apellido'] ?? ''));
         $correo = filter_var($_POST['correo'] ?? '', FILTER_VALIDATE_EMAIL);
-        $whatsapp = preg_replace('/\D+/', '', (string) ($_POST['whatsapp'] ?? ''));
+        $telefonoPais = preg_replace('/\D+/', '', (string) ($_POST['telefono_pais'] ?? '591'));
+        $telefonoLocal = preg_replace('/\D+/', '', (string) ($_POST['telefono'] ?? ''));
+        $whatsapp = $telefonoLocal === '' ? '' : $telefonoPais . $telefonoLocal;
         $actual = (string) ($_POST['actual'] ?? '');
         $nueva = (string) ($_POST['nueva'] ?? '');
         $confirmar = (string) ($_POST['confirmar'] ?? '');
-        $qrPago = $usuario['qr_pago_imagen'] ?? null;
 
-        if ($nombre === '' || !$correo) {
-            throw new RuntimeException('Nombre y correo obligatorios.');
+        if (!is_full_name($nombre) || !$correo) {
+            throw new RuntimeException('Nombre, apellido y correo son obligatorios.');
+        }
+        if ($telefonoLocal !== '' && (!isset($phoneCountries[$telefonoPais]) || strlen($telefonoLocal) < 5 || strlen($telefonoLocal) > 15)) {
+            throw new RuntimeException('Teléfono inválido.');
         }
 
-        if (isset($_POST['quitar_qr_pago'])) {
-            borrar_qr_pago_anterior($qrPago);
-            $qrPago = null;
-        }
-
-        if (($_FILES['qr_pago']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
-            $nuevoQr = FileUploader::qrPago($_FILES['qr_pago'], (int) Auth::id());
-            borrar_qr_pago_anterior($qrPago);
-            $qrPago = $nuevoQr;
-        }
-
-        $params = [$nombre, $correo, $whatsapp, $qrPago, Auth::id()];
-        $sql = "UPDATE usuarios SET nombre_completo = ?, correo = ?, whatsapp = ?, qr_pago_imagen = ?";
+        $params = [$nombre, $correo, $whatsapp, Auth::id()];
+        $sql = "UPDATE usuarios SET nombre_completo = ?, correo = ?, whatsapp = ?";
 
         if ($nueva !== '' || $confirmar !== '' || $actual !== '') {
             if (strlen($nueva) < 6 || $nueva !== $confirmar) {
@@ -62,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             $sql .= ", password_hash = ?";
-            $params = [$nombre, $correo, $whatsapp, $qrPago, password_hash($nueva, PASSWORD_BCRYPT), Auth::id()];
+            $params = [$nombre, $correo, $whatsapp, password_hash($nueva, PASSWORD_BCRYPT), Auth::id()];
         }
 
         $sql .= " WHERE id = ?";
@@ -71,7 +68,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['usuario']['nombre'] = $nombre;
         $_SESSION['usuario']['correo'] = $correo;
         $_SESSION['usuario']['whatsapp'] = $whatsapp;
-        $_SESSION['usuario']['qr_pago_imagen'] = $qrPago;
 
         flash('success', 'Perfil actualizado.');
         redirect('perfil.php');
@@ -80,17 +76,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+[$nombreActual, $apellidoActual] = split_name_parts($usuario['nombre_completo'] ?? '');
+[$telefonoPaisActual, $telefonoLocalActual] = separar_telefono_perfil($usuario['whatsapp'] ?? '', $phoneCountries);
 admin_header('Mi perfil');
 ?>
 <div class="glass admin-panel">
     <h2>Información personal</h2>
-    <form method="post" enctype="multipart/form-data">
+    <form method="post">
         <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
         <div class="form-row form-row-2 mb-2">
             <div class="form-group">
-                <label class="form-label">Nombre completo</label>
-                <input class="form-input" name="nombre_completo" value="<?= e($usuario['nombre_completo'] ?? '') ?>" required>
+                <label class="form-label">Nombre</label>
+                <input class="form-input" name="nombre" value="<?= e($nombreActual) ?>" required minlength="2">
             </div>
+            <div class="form-group">
+                <label class="form-label">Apellido</label>
+                <input class="form-input" name="apellido" value="<?= e($apellidoActual) ?>" required minlength="2">
+            </div>
+        </div>
+        <div class="form-row form-row-2 mb-2">
             <div class="form-group">
                 <label class="form-label">Correo</label>
                 <input class="form-input" type="email" name="correo" value="<?= e($usuario['correo'] ?? '') ?>" required>
@@ -98,27 +102,14 @@ admin_header('Mi perfil');
         </div>
 
         <div class="form-group mb-3">
-            <label class="form-label">WhatsApp</label>
-            <input class="form-input" name="whatsapp" value="<?= e($usuario['whatsapp'] ?? '') ?>" placeholder="59170000000">
-        </div>
-
-        <hr style="border-color:var(--line);margin:1.5rem 0">
-        <h3 style="font-size:1.1rem;margin-bottom:.5rem">QR de pago del vendedor</h3>
-        <p class="text-white-50">Si una compra entra con tu enlace o código de vendedor, se mostrará este QR para pagar.</p>
-        <div class="form-row form-row-2 mb-3">
-            <div class="form-group">
-                <label class="form-label">Subir o reemplazar QR</label>
-                <input class="form-input" type="file" name="qr_pago" accept=".jpg,.jpeg,.png,image/jpeg,image/png">
-                <small class="text-white-50">Solo JPG o PNG hasta 5MB. Se guarda sin metadatos.</small>
-            </div>
-            <div class="form-group">
-                <label class="form-label">QR actual</label>
-                <?php if (!empty($usuario['qr_pago_imagen']) && is_file(UPLOAD_PATH . '/qr-pagos/' . $usuario['qr_pago_imagen'])): ?>
-                    <img class="vendor-qr-preview" src="../uploads/qr-pagos/<?= e(rawurlencode($usuario['qr_pago_imagen'])) ?>" alt="QR de pago actual">
-                    <button class="btn btn-danger btn-sm mt-2" type="submit" name="quitar_qr_pago" value="1">Quitar QR</button>
-                <?php else: ?>
-                    <div class="empty-state">Sin QR propio. Se usará el QR general de SOE.</div>
-                <?php endif; ?>
+            <label class="form-label">Teléfono</label>
+            <div class="phone-field">
+                <select class="form-input form-select" name="telefono_pais" data-country-select>
+                    <?php foreach ($phoneCountries as $code => $label): ?>
+                        <option value="<?= e($code) ?>" data-short="+<?= e($code) ?>" data-label="<?= e($label) ?>" <?= $code === $telefonoPaisActual ? 'selected' : '' ?>>+<?= e($code) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <input class="form-input" type="tel" name="telefono" inputmode="numeric" maxlength="15" pattern="[0-9]{5,15}" data-phone-local="true" value="<?= e($telefonoLocalActual) ?>" placeholder="70000000">
             </div>
         </div>
 
