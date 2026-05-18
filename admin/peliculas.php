@@ -116,14 +116,12 @@ admin_header('Películas');
                 <input class="form-input" type="text" inputmode="decimal" data-decimal-only="true" name="precio_entrada" required value="<?= e((string) ($editar['precio_entrada'] ?? '')) ?>">
             </div>
         </div>
-        <div class="form-row form-row-2 mb-3">
-            <div class="form-group">
+        <div class="form-group mb-3">
                 <label class="form-label">Estado</label>
                 <select class="form-input form-select" name="estado">
                     <option value="activo">Activo</option>
                     <option value="inactivo" <?= ($editar['estado'] ?? '') === 'inactivo' ? 'selected' : '' ?>>Inactivo</option>
                 </select>
-            </div>
         </div>
         <button class="btn btn-primary btn-lg">Guardar</button>
     </form>

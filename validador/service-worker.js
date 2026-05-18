@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cine-soe-validador-v11-cleancontrols';
+const CACHE_NAME = 'cine-soe-validador-v12-nophpcache';
 const OFFLINE_URL = '../offline.html';
 const STATIC_ASSETS = [
   'escaner.php',
@@ -23,6 +23,11 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
+
+  if (url.pathname.endsWith('.php') && !url.pathname.endsWith('/validador/escaner.php')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
 
   if (url.pathname.includes('/api/validar-qr.php')) {
     event.respondWith(fetch(event.request));

@@ -84,7 +84,7 @@ admin_header('Mi perfil');
     <h2>Información personal</h2>
     <form method="post">
         <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
-        <div class="form-row form-row-2 mb-2">
+        <div class="form-row form-row-3 mb-2">
             <div class="form-group">
                 <label class="form-label">Nombre</label>
                 <input class="form-input" name="nombre" value="<?= e($nombreActual) ?>" required minlength="2">
@@ -93,8 +93,6 @@ admin_header('Mi perfil');
                 <label class="form-label">Apellido</label>
                 <input class="form-input" name="apellido" value="<?= e($apellidoActual) ?>" required minlength="2">
             </div>
-        </div>
-        <div class="form-row form-row-2 mb-2">
             <div class="form-group">
                 <label class="form-label">Correo</label>
                 <input class="form-input" type="email" name="correo" value="<?= e($usuario['correo'] ?? '') ?>" required>
