@@ -86,12 +86,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body class="site-bg">
 <nav class="navbar" id="mainNav">
     <a class="brand" href="index.php"><span class="brand-icon">SOE</span> Cine Universitario</a>
-    <div class="nav-links"><a class="btn btn-ghost" href="index.php"><- Cartelera</a></div>
+    <div class="nav-links"><a class="btn btn-ghost" href="index.php">← Cartelera</a></div>
 </nav>
 
 <main class="checkout-page">
 <div class="container">
-    <a href="index.php" class="checkout-back"><- Volver a cartelera</a>
+    <a href="index.php" class="checkout-back">← Volver a cartelera</a>
 
     <div class="glass checkout-panel">
         <p class="section-eyebrow">Compra segura</p>
@@ -142,7 +142,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <span>Total:</span>
                     <span class="total-amount" id="totalPrice">Bs 0.00</span>
                 </div>
-                <button type="button" class="btn btn-primary btn-lg btn-block" data-step-next>Siguiente -></button>
+                <button type="button" class="btn btn-primary btn-lg btn-block" data-step-next>Siguiente →</button>
             </div>
 
             <div class="step-panel">
@@ -178,8 +178,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 </div>
                 <div class="flex gap-2">
-                    <button type="button" class="btn btn-ghost btn-lg" data-step-prev><- Atras</button>
-                    <button type="button" class="btn btn-primary btn-lg" style="flex:1" data-step-next>Siguiente -></button>
+                    <button type="button" class="btn btn-ghost btn-lg" data-step-prev>← Atras</button>
+                    <button type="button" class="btn btn-primary btn-lg" style="flex:1" data-step-next>Siguiente →</button>
                 </div>
             </div>
 
