@@ -1,0 +1,16 @@
+vendor/
+
+uploads/comprobantes/*
+uploads/qr/*
+uploads/tickets/*
+!uploads/.htaccess
+!uploads/comprobantes/.gitkeep
+!uploads/comprobantes/*/.gitkeep
+!uploads/qr/.gitkeep
+!uploads/tickets/.gitkeep
+
+.env
+*.log
+*.tmp
+Thumbs.db
+.DS_Store

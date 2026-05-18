@@ -1,0 +1,11 @@
+Options -Indexes
+AddDefaultCharset UTF-8
+
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteRule ^validar/([A-Fa-f0-9]{64})$ api/verificar-entrada.php?token=$1 [L,QSA]
+</IfModule>
+
+<FilesMatch "\.(sql|env|ini|log)$">
+Require all denied
+</FilesMatch>

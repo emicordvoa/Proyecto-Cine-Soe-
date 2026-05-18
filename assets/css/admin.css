@@ -1,0 +1,93 @@
+/* ===== ADMIN LAYOUT ===== */
+.admin-layout{display:flex;min-height:100vh}
+.admin-layout.collapsed .sidebar{width:70px}
+.admin-layout.collapsed .sidebar-label,.admin-layout.collapsed .sidebar-header span,.admin-layout.collapsed .sidebar-user-info{display:none}
+.admin-layout.collapsed .sidebar-link{justify-content:center;padding:.7rem}
+
+/* Sidebar */
+.sidebar{width:260px;flex-shrink:0;position:sticky;top:0;height:100vh;background:rgba(10,5,32,.95);backdrop-filter:blur(20px);border-right:1px solid var(--line);z-index:150;display:flex;flex-direction:column;transition:width .3s ease,transform .3s ease;overflow-y:auto;overflow-x:hidden}
+.sidebar-header{display:flex;align-items:center;gap:.7rem;padding:1.2rem 1rem;border-bottom:1px solid var(--line);white-space:nowrap}
+.sidebar-header .brand-icon{width:36px;height:24px;border-radius:8px;background:linear-gradient(135deg,var(--cyan),#fff);color:#0a0520;display:grid;place-items:center;font-size:.7rem;font-weight:900;flex-shrink:0}
+.sidebar-header span{font-weight:800;font-size:1rem}
+.sidebar-nav{flex:1;padding:.8rem .6rem;display:flex;flex-direction:column;gap:.25rem}
+.sidebar-section{margin-top:1rem;margin-bottom:.3rem;padding:0 .6rem;font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:700}
+.sidebar-link{display:flex;align-items:center;gap:.7rem;padding:.65rem .8rem;border-radius:var(--r-md);color:rgba(255,255,255,.7);font-weight:600;font-size:.9rem;transition:all .2s;white-space:nowrap;border:0;background:0;cursor:pointer;width:100%;text-align:left}
+.sidebar-link:hover{background:rgba(255,255,255,.06);color:#fff}
+.sidebar-link.active{background:linear-gradient(135deg,rgba(124,77,255,.2),rgba(53,215,210,.1));color:#fff;border:1px solid rgba(124,77,255,.25)}
+.sidebar-link svg{width:20px;height:20px;flex-shrink:0;opacity:.7}
+.sidebar-link.active svg{opacity:1}
+.sidebar-user{padding:1rem;border-top:1px solid var(--line);display:flex;align-items:center;gap:.7rem}
+.sidebar-user-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--cyan));display:grid;place-items:center;font-weight:800;font-size:.85rem;flex-shrink:0}
+.sidebar-user-info{white-space:nowrap;overflow:hidden}
+.sidebar-user-name{font-weight:700;font-size:.88rem}
+.sidebar-user-role{font-size:.75rem;color:var(--muted)}
+
+/* Main area */
+.main-area{flex:1;min-width:0;padding:1.5rem;transition:padding .3s ease}
+
+/* Admin header */
+.admin-header{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap}
+.admin-header h1{font-size:clamp(1.5rem,3vw,2rem);font-weight:900;letter-spacing:-.03em}
+.sidebar-toggle{width:40px;height:40px;border:1px solid var(--line);border-radius:var(--r-md);background:rgba(255,255,255,.05);color:#fff;display:none;place-items:center;cursor:pointer;font-size:1.2rem;transition:background .2s}
+.sidebar-toggle:hover{background:rgba(255,255,255,.1)}
+
+/* Stat cards */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+.stat-card{padding:1.2rem;border-radius:var(--r-xl);background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.03));border:1px solid var(--line);transition:transform .2s,border-color .2s}
+.stat-card:hover{transform:translateY(-3px);border-color:rgba(53,215,210,.3)}
+.stat-card-label{font-size:.82rem;color:var(--muted);font-weight:700;margin-bottom:.3rem;display:flex;align-items:center;gap:.4rem}
+.stat-card-label svg{width:18px;height:18px;opacity:.6}
+.stat-card-value{font-size:clamp(1.8rem,3.5vw,2.5rem);font-weight:900;color:#fff;line-height:1;animation:countUp .5s ease both}
+
+/* Admin panels */
+.admin-panel{padding:clamp(1rem,2vw,1.5rem);margin-bottom:1.5rem}
+.admin-panel h2{font-size:clamp(1.1rem,2.5vw,1.5rem);font-weight:800;letter-spacing:-.02em;margin-bottom:1rem}
+.admin-panel .table{margin-bottom:0}
+
+/* Payment card in admin */
+.payment-card{padding:1.2rem;border-radius:var(--r-lg);background:rgba(255,255,255,.04);border:1px solid var(--line);margin-bottom:1rem;transition:transform .2s,border-color .2s}
+.payment-card:hover{transform:translateY(-2px);border-color:rgba(53,215,210,.25)}
+.payment-card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.8rem;flex-wrap:wrap}
+.payment-card-actions{display:flex;gap:.5rem;flex-wrap:wrap}
+
+/* Receipt preview */
+.receipt-preview{height:100px;max-width:180px;border-radius:var(--r-md);border:1px solid rgba(255,255,255,.12);object-fit:contain;background:#fff}
+.receipt-pdf{height:100px;width:100px;display:grid;place-items:center;border-radius:var(--r-md);background:#fff;color:#111;font-weight:900}
+
+/* Referral */
+.ref-label{font-size:1.1rem;font-weight:800;margin-bottom:.4rem}
+
+/* QR scanner admin */
+.qr-admin-grid{display:grid;grid-template-columns:minmax(260px,380px) 1fr;gap:1rem}
+.qr-counter{min-width:90px;padding:.7rem .9rem;border-radius:var(--r-lg);background:rgba(53,215,210,.1);border:1px solid rgba(53,215,210,.25);text-align:center}
+.qr-counter span{display:block;font-size:1.8rem;font-weight:900;color:var(--cyan);line-height:1}
+.qr-counter small{color:var(--muted);font-weight:700}
+
+/* Mobile sidebar */
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:140}
+.sidebar-overlay.active{display:block}
+
+@media(max-width:992px){
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .qr-admin-grid{grid-template-columns:1fr}
+}
+@media(max-width:768px){
+  .sidebar{position:fixed;top:0;left:0;height:100vh;transform:translateX(-100%);width:260px!important;z-index:150;}
+  .sidebar.open{transform:translateX(0)}
+  .sidebar-toggle{display:grid}
+  .main-area{padding:1rem}
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .admin-header{flex-wrap:wrap}
+}
+@media(max-width:520px){
+  .stats-grid{grid-template-columns:1fr}
+  .payment-card-header{flex-direction:column}
+  .payment-card-actions{width:100%}
+  .payment-card-actions .btn{flex:1}
+  .ticket-print-actions{display:grid;grid-template-columns:1fr}
+}
+
+/* ===== ESCANER CSS (preserve existing) ===== */
+.scanner-frame{border-radius:var(--r-lg);overflow:hidden}
+.status-dot{width:12px;height:12px;border-radius:50%;display:inline-block}
+.status-dot.valid{background:var(--success)}.status-dot.invalid{background:var(--danger)}
