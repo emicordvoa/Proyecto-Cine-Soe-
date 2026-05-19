@@ -256,12 +256,18 @@ document.querySelectorAll('[data-copy]').forEach(btn=>{
   });
 });
 
+/* ===== PDF.JS LOADER ===== */
+let pdfjsLib;const loadPdfJs=()=>{if(pdfjsLib)return Promise.resolve();const script=document.createElement('script');script.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';return new Promise((resolve,reject)=>{script.onload=()=>{pdfjsLib=window['pdfjs-dist/build/pdf'];pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';resolve();};script.onerror=reject;document.head.appendChild(script);});};
+
 /* ===== RECEIPT MODAL ===== */
 const rModal=document.getElementById('receiptModal');
 const rContent=document.getElementById('receiptModalContent');
 const closeReceipt=()=>{if(!rModal)return;rModal.classList.remove('is-open');document.body.style.overflow='';setTimeout(()=>{if(rContent)rContent.innerHTML='';},200);};
+
+const renderPdfPreview=async(url)=>{try{await loadPdfJs();if(!pdfjsLib){rContent.innerHTML='<div class="p-3 text-danger">No se pudo cargar PDF.js.</div>';return;}const pdf=await pdfjsLib.getDocument(url).promise;const page=await pdf.getPage(1);const canvas=document.createElement('canvas');const context=canvas.getContext('2d');const scale=Math.min(2,window.devicePixelRatio||1);const viewport=page.getViewport({scale});canvas.width=viewport.width;canvas.height=viewport.height;await page.render({canvasContext:context,viewport}).promise;const openBtn=`<div style="margin-top:.75rem;text-align:right"><a class="btn btn-ghost" href="${url}" target="_blank" rel="noopener">Abrir PDF en nueva pestaña</a></div>`;rContent.innerHTML='';rContent.appendChild(canvas);canvas.classList.add('receipt-modal-canvas');const container=document.createElement('div');container.innerHTML=openBtn;rContent.appendChild(container);}catch(e){const openBtn=`<div style="margin-top:.75rem;text-align:right"><a class="btn btn-ghost" href="${url}" target="_blank" rel="noopener">Abrir PDF en nueva pestaña</a></div>`;rContent.innerHTML=`<div class="p-3" style="color:var(--muted)">No se puede mostrar vista previa del PDF. ${openBtn}</div>`;}};
+
 document.querySelectorAll('[data-receipt-open]').forEach(btn=>{
-  btn.addEventListener('click',()=>{
+  btn.addEventListener('click',async()=>{
     if(!rModal||!rContent)return;
     const url = btn.dataset.receiptUrl || '';
     const kind = btn.dataset.receiptKind;
@@ -272,13 +278,15 @@ document.querySelectorAll('[data-receipt-open]').forEach(btn=>{
     }
     if (kind === 'image') {
       rContent.innerHTML = `<img class="receipt-modal-media" src="${url}" alt="Comprobante">`;
+      rModal.classList.add('is-open');document.body.style.overflow='hidden';
+    } else if (kind === 'pdf') {
+      rContent.innerHTML = '<div class="pdf-loading"><div class="spinner"></div><p>Cargando PDF...</p></div>';
+      rModal.classList.add('is-open');document.body.style.overflow='hidden';
+      await renderPdfPreview(url);
     } else {
-      // PDF preview with fallback button
-      const iframeHtml = `<iframe class="receipt-modal-media" src="${url}" title="Comprobante" frameborder="0"></iframe>`;
-      const openBtn = `<div style="margin-top:.75rem;text-align:right"><a class="btn btn-ghost" href="${url}" target="_blank" rel="noopener">Abrir PDF en nueva pestaña</a></div>`;
-      rContent.innerHTML = iframeHtml + openBtn;
+      rContent.innerHTML = `<img class="receipt-modal-media" src="${url}" alt="Comprobante">`;
+      rModal.classList.add('is-open');document.body.style.overflow='hidden';
     }
-    rModal.classList.add('is-open');document.body.style.overflow='hidden';
   });
 });
 document.querySelectorAll('[data-receipt-close]').forEach(b=>b.addEventListener('click',closeReceipt));
