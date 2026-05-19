@@ -8,6 +8,10 @@ require __DIR__ . '/../classes/Compra.php';
 require __DIR__ . '/../classes/Entrada.php';
 require __DIR__ . '/../classes/Mailer.php';
 
+// Aumentar límites de upload para PDFs
+ini_set('upload_max_filesize', '20M');
+ini_set('post_max_size', '25M');
+ini_set('memory_limit', '256M');
 ini_set('display_errors', '0');
 ini_set('display_startup_errors', '0');
 error_reporting(E_ALL);

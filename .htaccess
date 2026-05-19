@@ -9,3 +9,9 @@ RewriteRule ^validar/([A-Fa-f0-9]{64})$ api/verificar-entrada.php?token=$1 [L,QS
 <FilesMatch "\.(sql|env|ini|log)$">
 Require all denied
 </FilesMatch>
+
+<IfModule mod_php.c>
+php_value upload_max_filesize 20M
+php_value post_max_size 25M
+php_value memory_limit 256M
+</IfModule>

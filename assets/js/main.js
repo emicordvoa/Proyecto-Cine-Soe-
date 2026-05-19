@@ -320,12 +320,19 @@ async function buildTicketPdf(target){
   if(!target||!window.html2canvas||!window.jspdf)return null;
   const cards=[...target.querySelectorAll('.ticket-card')];const pages=cards.length?cards:[target];let pdf=null;
   for(const page of pages){
-    const canvas=await html2canvas(page,{scale:2,backgroundColor:null,useCORS:true});
+    // Renderizar con scale 1.2 para buena calidad visual
+    const canvas=await html2canvas(page,{scale:1.2,backgroundColor:null,useCORS:true});
+    // PNG mantiene bordes nítidos del QR (mejor que JPEG), jsPDF compress reduce tamaño
     const img=canvas.toDataURL('image/png');const orient=canvas.width>canvas.height?'landscape':'portrait';
     const m=48;const pw=canvas.width+m*2;const ph=canvas.height+m*2;
-    if(!pdf)pdf=new window.jspdf.jsPDF({orientation:orient,unit:'px',format:[pw,ph]});else pdf.addPage([pw,ph],orient);
+    // compress: true aplica compresión PDF, importante para reducir tamaño
+    if(!pdf)pdf=new window.jspdf.jsPDF({orientation:orient,unit:'px',format:[pw,ph],compress:true});else pdf.addPage([pw,ph],orient);
     pdf.setFillColor(255,255,255);pdf.rect(0,0,pw,ph,'F');pdf.addImage(img,'PNG',m,m,canvas.width,canvas.height);
-  }return pdf;
+  }
+  // Log del tamaño final para diagnóstico
+  const finalSize=(pdf.output('blob').size/1024/1024).toFixed(2);
+  console.log(`PDF generado: ${finalSize}MB (${cards.length} entradas, QR escaneables con PNG)`);
+  return pdf;
 }
 async function withBusy(btn,label,task){const orig=btn.textContent;btn.disabled=true;btn.textContent=label;try{await task();}finally{btn.disabled=false;btn.textContent=orig;}}
 
@@ -340,16 +347,23 @@ document.querySelectorAll('[data-email-ticket]').forEach(btn=>{
   const statusBox=document.querySelector('[data-email-ticket-status]');
   const setStatus=(t,m)=>{if(!statusBox)return;statusBox.className='alert alert-'+t;statusBox.style.display='block';statusBox.textContent=m;};
   const send=()=>withBusy(btn,'Enviando...',async()=>{
-    setStatus('info','Generando PDF...');
+    setStatus('info','Generando PDF con entradas y QRs...');
     const pdf=await buildTicketPdf(document.querySelector(btn.dataset.emailTicket||'#ticketPDF'));if(!pdf)return;
+    const pdfBlob=pdf.output('blob');if(!pdfBlob||pdfBlob.size===0)throw new Error('El PDF generado está vacío.');
+    const pdfSizeMb=(pdfBlob.size/1024/1024).toFixed(2);
+    const maxSizeMb=8;console.warn(`📄 PDF final: ${pdfSizeMb}MB / Límite: ${maxSizeMb}MB`);
+    if(pdfBlob.size>maxSizeMb*1024*1024){
+      console.error(`❌ PDF demasiado pesado: ${pdfSizeMb}MB > ${maxSizeMb}MB. Sugerencia: descargar primero, enviar manualmente.`);
+      throw new Error(`PDF muy pesado (${pdfSizeMb}MB). Intenta descargar y enviar manualmente.`);
+    }
+    console.log(`✅ PDF listo para enviar: ${pdfSizeMb}MB con QRs escaneables (PNG comprimido).`);
     setStatus('info','Enviando correo...');
-    const fd=new FormData();fd.append('compra',btn.dataset.compra||'');fd.append('csrf',btn.dataset.csrf||'');const pdfBlob=pdf.output('blob');if(!pdfBlob||pdfBlob.size===0)throw new Error('El PDF generado está vacío.');
-    fd.append('pdf',pdfBlob,btn.dataset.filename||'entradas.pdf');
+    const fd=new FormData();fd.append('compra',btn.dataset.compra||'');fd.append('csrf',btn.dataset.csrf||'');fd.append('pdf',pdfBlob,btn.dataset.filename||'entradas.pdf');
     const r=await fetch(btn.dataset.emailUrl||'../api/enviar-ticket-pdf.php',{method:'POST',body:fd,credentials:'same-origin'});
-    let d;const raw=await r.text();try{d=JSON.parse(raw);}catch(e){console.error('Respuesta no JSON del servidor:',raw);d={ok:false,message:'El servidor no devolvió JSON válido. Revisa logs.'};}
+    let d;const raw=await r.text();try{d=JSON.parse(raw);}catch(e){console.error('❌ Respuesta no JSON:',raw);d={ok:false,message:'El servidor no devolvió JSON válido. Revisa logs.'};}
     if(!r.ok||!d.ok)throw new Error(d.message||'Error al enviar.');
-    setStatus('success',d.message||'Correo enviado.');
-  }).catch(e=>setStatus('danger',e.message||'Error al enviar.'));
+    setStatus('success',d.message||'✅ Correo enviado con entradas.');
+  }).catch(e=>setStatus('danger','❌ '+e.message||'Error al enviar.'));
   btn.addEventListener('click',send);
   if(btn.dataset.autoEmailTicket==='1')setTimeout(send,800);
 });
