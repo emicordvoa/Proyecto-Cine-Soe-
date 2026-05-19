@@ -1,3 +1,12 @@
 [phases.nginxSetup]
 dependsOn = ["setup"]
-cmds = ["mkdir -p /var/log/nginx"]
+cmds = [
+  "mkdir -p /var/log/nginx",
+  "mkdir -p /app/uploads/comprobantes/pendientes",
+  "mkdir -p /app/uploads/comprobantes/verificados",
+  "mkdir -p /app/uploads/comprobantes/rechazados",
+  "mkdir -p /app/uploads/qr-pagos",
+  "mkdir -p /app/assets/img/peliculas",
+  "chmod -R 777 /app/uploads",
+  "chmod -R 777 /app/assets/img/peliculas"
+]
