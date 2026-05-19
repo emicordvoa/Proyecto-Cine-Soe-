@@ -48,9 +48,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = Database::getConnection()->prepare("UPDATE compras SET comprobante_nombre = ?, estado_pago = 'pendiente' WHERE id = ?");
         $stmt->execute([$fileName, (int) $compra['id']]);
 
-        if ($comprobanteAnterior !== '') {
+        if ($comprobanteAnterior !== '' && $comprobanteAnterior !== '.') {
             $rutaAnterior = UPLOAD_PATH . '/comprobantes/pendientes/' . $comprobanteAnterior;
-            if (is_file($rutaAnterior)) {
+            if (@is_file($rutaAnterior)) {
                 @unlink($rutaAnterior);
             }
         }

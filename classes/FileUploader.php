@@ -167,13 +167,31 @@ class FileUploader
 
     private static function guardarSubido(string $tmpName, string $destination): void
     {
-        if (!is_dir(dirname($destination)) && !mkdir(dirname($destination), 0775, true)) {
+        $carpetaDestino = dirname($destination);
+
+        // Crear carpeta si no existe (con reintentos para robustez en servidores remotos)
+        if (!@is_dir($carpetaDestino)) {
+            // Primer intento
+            if (!@mkdir($carpetaDestino, 0775, true)) {
+                // Segundo intento (a veces falla la primera vez en servidores remotos)
+                if (!@is_dir($carpetaDestino)) {
+                    @mkdir($carpetaDestino, 0775, true);
+                }
+            }
+        }
+
+        // Verificar permisos finales
+        if (!@is_dir($carpetaDestino) || !@is_writable($carpetaDestino)) {
             throw new RuntimeException('No se pudo preparar la carpeta de archivos.');
         }
 
-        if (!move_uploaded_file($tmpName, $destination)) {
+        // Mover archivo subido
+        if (!@move_uploaded_file($tmpName, $destination)) {
             throw new RuntimeException('No se pudo guardar el archivo.');
         }
+
+        // Asegurar permisos del archivo creado
+        @chmod($destination, 0644);
     }
 
     private static function validarDimensionesImagen(string $source): void

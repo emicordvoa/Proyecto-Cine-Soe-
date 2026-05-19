@@ -3,28 +3,46 @@ require_once __DIR__ . '/_bootstrap.php';
 $pdo = Database::getConnection();
 
 function mover_comprobante(string $archivo, string $destino): bool {
+    // Validar que el nombre del archivo no esté vacío
     $nombre = basename($archivo);
-    if ($nombre === '') {
+    if (empty($nombre) || $nombre === '.' || $nombre === '..') {
         return false;
     }
 
+    // Construir rutas seguras
     $origen = UPLOAD_PATH . '/comprobantes/pendientes/' . $nombre;
     $directorioDestino = UPLOAD_PATH . '/comprobantes/' . trim($destino, '/');
-    $final = $directorioDestino . '/' . $nombre;
+    $destino_final = $directorioDestino . '/' . $nombre;
 
-    if (is_file($final)) {
-        return true; // Ya fue movido previamente.
+    // Si el archivo ya está en destino, considerarlo como éxito
+    if (@is_file($destino_final)) {
+        return true;
     }
 
-    if (!is_dir($directorioDestino) && !mkdir($directorioDestino, 0775, true) && !is_dir($directorioDestino)) {
+    // Si el archivo origen no existe, considerarlo "ya movido" o "no disponible"
+    if (!@is_file($origen)) {
         return false;
     }
 
-    if (!is_file($origen)) {
+    // Verificar que el directorio destino exista, si no, crearlo con permisos seguros
+    if (!@is_dir($directorioDestino)) {
+        if (!@mkdir($directorioDestino, 0775, true)) {
+            // Si falla, retornar false pero sin warning
+            return false;
+        }
+    }
+
+    // Intentar mover el archivo sin mostrar warnings
+    if (!@rename($origen, $destino_final)) {
+        // Si falla rename, intentar copy + unlink como fallback (a veces funciona en algunos servidores)
+        if (@copy($origen, $destino_final)) {
+            @unlink($origen);
+            return true;
+        }
         return false;
     }
 
-    return rename($origen, $final);
+    return true;
 }
 
 $filtroVendedorId = admin_view_vendor_id();
