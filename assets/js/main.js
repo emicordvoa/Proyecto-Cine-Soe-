@@ -343,9 +343,10 @@ document.querySelectorAll('[data-email-ticket]').forEach(btn=>{
     setStatus('info','Generando PDF...');
     const pdf=await buildTicketPdf(document.querySelector(btn.dataset.emailTicket||'#ticketPDF'));if(!pdf)return;
     setStatus('info','Enviando correo...');
-    const fd=new FormData();fd.append('compra',btn.dataset.compra||'');fd.append('csrf',btn.dataset.csrf||'');fd.append('pdf',pdf.output('blob'),btn.dataset.filename||'entradas.pdf');
+    const fd=new FormData();fd.append('compra',btn.dataset.compra||'');fd.append('csrf',btn.dataset.csrf||'');const pdfBlob=pdf.output('blob');if(!pdfBlob||pdfBlob.size===0)throw new Error('El PDF generado está vacío.');
+    fd.append('pdf',pdfBlob,btn.dataset.filename||'entradas.pdf');
     const r=await fetch(btn.dataset.emailUrl||'../api/enviar-ticket-pdf.php',{method:'POST',body:fd,credentials:'same-origin'});
-    const d=await r.json().catch(()=>({ok:false,message:'Respuesta inválida.'}));
+    let d;const raw=await r.text();try{d=JSON.parse(raw);}catch(e){console.error('Respuesta no JSON del servidor:',raw);d={ok:false,message:'El servidor no devolvió JSON válido. Revisa logs.'};}
     if(!r.ok||!d.ok)throw new Error(d.message||'Error al enviar.');
     setStatus('success',d.message||'Correo enviado.');
   }).catch(e=>setStatus('danger',e.message||'Error al enviar.'));
