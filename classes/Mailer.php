@@ -11,33 +11,48 @@ class Mailer
         }
 
         $smtp = self::smtpConfig();
-        $from = $smtp['smtp_usuario'] ?: 'emlvpel@gmail.com';
+        $from = $smtp['smtp_from'] ?: $smtp['smtp_usuario'] ?: 'no-reply@' . ($_SERVER['SERVER_NAME'] ?? 'localhost');
+        $fromName = $smtp['smtp_from_name'] ?: APP_NAME;
         $attachments = self::normalizarAdjuntos($attachments);
 
         if (class_exists(\PHPMailer\PHPMailer\PHPMailer::class)) {
-            $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
-            if (!empty($smtp['smtp_host']) && !empty($smtp['smtp_usuario']) && !empty($smtp['smtp_password'])) {
-                $mail->isSMTP();
-                $mail->Host = $smtp['smtp_host'];
-                $mail->SMTPAuth = true;
-                $mail->Username = $smtp['smtp_usuario'];
-                $mail->Password = $smtp['smtp_password'];
-                $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
-                $mail->Port = (int) ($smtp['smtp_puerto'] ?: 587);
-            } else {
-                $mail->isMail();
-            }
+            try {
+                $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+                if (!empty($smtp['smtp_host']) && !empty($smtp['smtp_usuario']) && !empty($smtp['smtp_password'])) {
+                    $mail->isSMTP();
+                    $mail->Host = $smtp['smtp_host'];
+                    $mail->SMTPAuth = true;
+                    $mail->Username = $smtp['smtp_usuario'];
+                    $mail->Password = $smtp['smtp_password'];
 
-            $mail->CharSet = 'UTF-8';
-            $mail->setFrom($from, APP_NAME);
-            $mail->addAddress($to);
-            $mail->isHTML(true);
-            $mail->Subject = $subject;
-            $mail->Body = $html;
-            foreach ($attachments as $attachment) {
-                $mail->addAttachment($attachment['path'], $attachment['filename']);
+                    $secure = strtolower(trim((string) ($smtp['smtp_secure'] ?? '')));
+                    if (in_array($secure, ['ssl', 'smtps'], true)) {
+                        $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
+                    } elseif (in_array($secure, ['tls', 'starttls'], true)) {
+                        $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+                    } else {
+                        $mail->SMTPSecure = '';
+                    }
+
+                    $mail->Port = (int) ($smtp['smtp_puerto'] ?: 587);
+                } else {
+                    $mail->isMail();
+                }
+
+                $mail->CharSet = 'UTF-8';
+                $mail->setFrom($from, $fromName);
+                $mail->addAddress($to);
+                $mail->isHTML(true);
+                $mail->Subject = $subject;
+                $mail->Body = $html;
+                foreach ($attachments as $attachment) {
+                    $mail->addAttachment($attachment['path'], $attachment['filename']);
+                }
+                return $mail->send();
+            } catch (Throwable $exception) {
+                error_log('PHPMailer error: ' . $exception->getMessage());
+                return false;
             }
-            return $mail->send();
         }
 
         $message = self::buildMimeMessage($from, $to, $subject, $html, $attachments);
@@ -54,11 +69,17 @@ class Mailer
         $html = self::ticketEmailHtml($compra, $tokens);
 
         return self::enviar(
-            $compra['correo'],
+            (string) $compra['correo'],
             '🎟️ Tu compra fue confirmada - ' . $compra['codigo_compra'],
             $html,
             $ticketPdf ? [$ticketPdf] : []
         );
+    }
+
+    public static function hasSmtpConfig(): bool
+    {
+        $smtp = self::smtpConfig();
+        return !empty($smtp['smtp_host']) && !empty($smtp['smtp_usuario']) && !empty($smtp['smtp_password']);
     }
 
     private static function ticketEmailHtml(array $compra, array $tokens): string
@@ -301,10 +322,13 @@ class Mailer
     private static function smtpConfig(): array
     {
         $defaults = [
-            'smtp_host' => 'smtp.gmail.com',
-            'smtp_puerto' => '587',
-            'smtp_usuario' => 'emlvpel@gmail.com',
-            'smtp_password' => getenv('SMTP_PASSWORD') ?: getenv('SMTP_PASS') ?: '',
+            'smtp_host' => getenv('SMTP_HOST') ?: '',
+            'smtp_puerto' => getenv('SMTP_PORT') ?: '587',
+            'smtp_usuario' => getenv('SMTP_USER') ?: getenv('SMTP_FROM') ?: '',
+            'smtp_password' => getenv('SMTP_PASS') ?: getenv('SMTP_PASSWORD') ?: '',
+            'smtp_from' => getenv('SMTP_FROM') ?: '',
+            'smtp_from_name' => getenv('SMTP_FROM_NAME') ?: APP_NAME,
+            'smtp_secure' => strtolower(trim((string) getenv('SMTP_SECURE'))),
         ];
 
         if (!class_exists('Database')) {
@@ -315,9 +339,19 @@ class Mailer
             $rows = Database::getConnection()
                 ->query("SELECT clave, valor FROM configuracion WHERE clave LIKE 'smtp_%'")
                 ->fetchAll();
-            return array_merge($defaults, array_column($rows, 'valor', 'clave'));
+            $config = array_merge($defaults, array_column($rows, 'valor', 'clave'));
         } catch (Throwable) {
-            return $defaults;
+            $config = $defaults;
         }
+
+        if (empty($config['smtp_from'])) {
+            $config['smtp_from'] = $config['smtp_usuario'] ?: 'no-reply@' . ($_SERVER['SERVER_NAME'] ?? 'localhost');
+        }
+
+        if (empty($config['smtp_from_name'])) {
+            $config['smtp_from_name'] = APP_NAME;
+        }
+
+        return $config;
     }
 }

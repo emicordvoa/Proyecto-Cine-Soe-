@@ -8,39 +8,76 @@ require __DIR__ . '/../classes/Compra.php';
 require __DIR__ . '/../classes/Entrada.php';
 require __DIR__ . '/../classes/Mailer.php';
 
+ini_set('display_errors', '0');
+ini_set('display_startup_errors', '0');
+error_reporting(E_ALL);
+ob_start();
+set_error_handler(function (int $errno, string $errstr, string $errfile, int $errline): bool {
+    throw new ErrorException($errstr, 0, $errno, $errfile, $errline);
+});
+register_shutdown_function(function (): void {
+    $lastError = error_get_last();
+    if ($lastError !== null && in_array($lastError['type'], [E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR, E_PARSE], true)) {
+        error_log(sprintf(
+            'Fatal error en api/enviar-ticket-pdf.php: %s in %s on line %s',
+            $lastError['message'],
+            $lastError['file'] ?? '<unknown>',
+            $lastError['line'] ?? 0
+        ));
+        if (ob_get_length() !== false) {
+            ob_clean();
+        }
+        header('Content-Type: application/json; charset=utf-8');
+        http_response_code(500);
+        echo json_encode(['ok' => false, 'message' => 'Ocurrió un error interno al procesar el correo.'], JSON_UNESCAPED_UNICODE);
+    }
+});
+
 header('Content-Type: application/json; charset=utf-8');
 
 function json_response(bool $ok, string $message, int $status = 200): never
 {
+    if (ob_get_length() !== false) {
+        ob_clean();
+    }
     http_response_code($status);
     echo json_encode(['ok' => $ok, 'message' => $message], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-if (!Auth::check() || !in_array(Auth::user()['rol'], ['admin', 'vendedor'], true)) {
-    json_response(false, 'Sesion no autorizada.', 401);
-}
+try {
+    if (!Auth::check() || !in_array(Auth::user()['rol'], ['admin', 'vendedor'], true)) {
+        json_response(false, 'Sesion no autorizada.', 401);
+    }
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    json_response(false, 'Metodo no permitido.', 405);
-}
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        json_response(false, 'Metodo no permitido.', 405);
+    }
 
-if (!verify_csrf($_POST['csrf'] ?? null)) {
-    json_response(false, 'Sesion expirada.', 419);
-}
+    if (!verify_csrf($_POST['csrf'] ?? null)) {
+        json_response(false, 'Sesion expirada.', 419);
+    }
 
-$compraId = filter_input(INPUT_POST, 'compra', FILTER_VALIDATE_INT);
-$compra = $compraId ? Compra::detalle($compraId) : null;
-if (!$compra) {
-    json_response(false, 'Compra no encontrada.', 404);
-}
+    $compraId = filter_input(INPUT_POST, 'compra', FILTER_VALIDATE_INT);
+    $compra = $compraId ? Compra::detalle($compraId) : null;
+    if (!$compra) {
+        json_response(false, 'Compra no encontrada.', 404);
+    }
 
-if (Auth::user()['rol'] === 'vendedor' && (int) $compra['id_usuario_vendedor'] !== (int) Auth::id()) {
-    json_response(false, 'No autorizado para esta compra.', 403);
-}
+    if (Auth::user()['rol'] === 'vendedor' && (int) $compra['id_usuario_vendedor'] !== (int) Auth::id()) {
+        json_response(false, 'No autorizado para esta compra.', 403);
+    }
 
 if (($compra['estado_pago'] ?? '') !== 'aprobado') {
     json_response(false, 'La compra aun no esta aprobada.', 422);
+}
+
+if (empty($compra['correo']) || !filter_var((string) $compra['correo'], FILTER_VALIDATE_EMAIL)) {
+    json_response(false, 'El correo del cliente no esta configurado o es invalido.', 422);
+}
+
+if (!Mailer::hasSmtpConfig()) {
+    json_response(false, 'No se configuró el correo SMTP.', 500);
 }
 
 $file = $_FILES['pdf'] ?? null;
@@ -97,3 +134,7 @@ json_response(
     $sent ? 'Correo enviado con el PDF de entradas.' : 'No se pudo enviar el correo. Revisa SMTP.',
     $sent ? 200 : 500
 );
+} catch (Throwable $exception) {
+    error_log('Error en api/enviar-ticket-pdf.php: ' . $exception->getMessage() . ' in ' . $exception->getFile() . ':' . $exception->getLine());
+    json_response(false, 'No se pudo enviar el correo. Revisa la configuración SMTP.', 500);
+}
