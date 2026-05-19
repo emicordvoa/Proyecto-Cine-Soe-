@@ -49,6 +49,20 @@ function json_response(bool $ok, string $message, int $status = 200): never
     exit;
 }
 
+function upload_error_message(int $code): string
+{
+    return match ($code) {
+        UPLOAD_ERR_INI_SIZE => 'El archivo excede el tamaño máximo permitido por el servidor.',
+        UPLOAD_ERR_FORM_SIZE => 'El archivo excede el tamaño máximo permitido en el formulario.',
+        UPLOAD_ERR_PARTIAL => 'La subida del archivo se realizó solo parcialmente.',
+        UPLOAD_ERR_NO_FILE => 'No se recibió el PDF en el servidor.',
+        UPLOAD_ERR_NO_TMP_DIR => 'Falta la carpeta temporal en el servidor.',
+        UPLOAD_ERR_CANT_WRITE => 'No se pudo escribir el archivo temporal.',
+        UPLOAD_ERR_EXTENSION => 'La subida fue detenida por una extensión del servidor.',
+        default => 'Error desconocido al subir el PDF.',
+    };
+}
+
 try {
     if (!Auth::check() || !in_array(Auth::user()['rol'], ['admin', 'vendedor'], true)) {
         json_response(false, 'Sesion no autorizada.', 401);
@@ -84,22 +98,44 @@ try {
         json_response(false, 'No se configuró el correo SMTP.', 500);
     }
 
-    $file = $_FILES['pdf'] ?? null;
-    if (!is_array($file) || ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
-        json_response(false, 'No se recibio el PDF.', 422);
+    if (!isset($_FILES['pdf'])) {
+        json_response(false, 'No se recibió el PDF en el servidor.', 422);
     }
 
-    if ((int) ($file['size'] ?? 0) <= 0 || (int) $file['size'] > 15 * 1024 * 1024) {
-        json_response(false, 'El PDF esta vacio o supera 15MB.', 422);
+    $file = $_FILES['pdf'];
+    if (!is_array($file)) {
+        json_response(false, 'No se recibió el PDF en el servidor.', 422);
+    }
+
+    $error = (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE);
+    if ($error !== UPLOAD_ERR_OK) {
+        json_response(false, 'Error de carga del PDF: ' . upload_error_message($error), 422);
+    }
+
+    $size = (int) ($file['size'] ?? 0);
+    if ($size <= 0) {
+        json_response(false, 'El PDF enviado está vacío.', 422);
+    }
+
+    if ($size > 15 * 1024 * 1024) {
+        json_response(false, 'El PDF supera 15MB.', 422);
     }
 
     $tmpName = (string) ($file['tmp_name'] ?? '');
-    if ($tmpName === '' || !is_uploaded_file($tmpName) || !is_readable($tmpName)) {
-        json_response(false, 'No se pudo leer el PDF.', 422);
+    if ($tmpName === '') {
+        json_response(false, 'No se detectó el archivo temporal del PDF.', 422);
+    }
+
+    if (!is_uploaded_file($tmpName) || !is_readable($tmpName)) {
+        json_response(false, 'No se pudo leer el PDF temporal en el servidor.', 422);
     }
 
     $pdfData = file_get_contents($tmpName);
-    if ($pdfData === false || !preg_match('/\A%PDF-\d\.\d/', $pdfData) || !str_contains(substr($pdfData, -2048), '%%EOF')) {
+    if ($pdfData === false) {
+        json_response(false, 'No se pudo leer el contenido del PDF.', 422);
+    }
+
+    if (!preg_match('/\A%PDF-\d\.\d/', $pdfData) || !str_contains(substr($pdfData, -2048), '%%EOF')) {
         json_response(false, 'El archivo generado no parece un PDF valido.', 422);
     }
 
@@ -124,14 +160,27 @@ try {
 
     $destination = $directory . '/' . $fileName;
     if (!move_uploaded_file($tmpName, $destination)) {
-        json_response(false, 'No se pudo guardar el PDF generado.', 500);
+        error_log('move_uploaded_file falló para PDF: ' . $tmpName . ' -> ' . $destination);
+        if (!copy($tmpName, $destination) || !unlink($tmpName)) {
+            error_log('Fallback copy+unlink falló para PDF temporal: ' . $tmpName . ' -> ' . $destination);
+            json_response(false, 'No se pudo guardar el PDF generado en el servidor.', 500);
+        }
     }
 
-    $sent = Mailer::enviarTickets($compra, $tokens, [
-        'path' => $destination,
-        'filename' => $fileName,
-        'mime' => 'application/pdf',
-    ]);
+    try {
+        $sent = Mailer::enviarTickets($compra, $tokens, [
+            'path' => $destination,
+            'filename' => $fileName,
+            'mime' => 'application/pdf',
+        ]);
+    } catch (Throwable $mailerException) {
+        error_log('Mailer::enviarTickets error para compra ' . $compra['id'] . ': ' . $mailerException->getMessage());
+        json_response(false, 'No se pudo enviar el correo. Revisa la configuración SMTP.', 500);
+    }
+
+    if (!$sent) {
+        error_log('Mailer::enviarTickets devolvió false para compra ' . $compra['id'] . '. Archivo: ' . $destination);
+    }
 
     json_response(
         $sent,
