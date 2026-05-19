@@ -64,7 +64,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $tiempoRestante = Compra::tiempoRestanteSegundos($compra);
 $waVendedorCompra = $_SESSION['wa_vendedor_compra_' . (int) $compra['id']] ?? null;
-$comprobanteUrl = $compra['comprobante_nombre'] ? 'uploads/comprobantes/pendientes/' . rawurlencode($compra['comprobante_nombre']) : '';
+$comprobanteUrl = '';
+$fileExists = false;
+$safeName = basename((string) ($compra['comprobante_nombre'] ?? ''));
+if ($safeName !== '') {
+    $dirs = ['pendientes', 'verificados', 'rechazados'];
+    foreach ($dirs as $d) {
+        $path = UPLOAD_PATH . '/comprobantes/' . $d . '/' . $safeName;
+        if (is_file($path)) {
+            $comprobanteUrl = 'uploads/comprobantes/' . $d . '/' . rawurlencode($safeName);
+            $fileExists = true;
+            break;
+        }
+    }
+    if ($comprobanteUrl === '') {
+        $comprobanteUrl = 'uploads/comprobantes/pendientes/' . rawurlencode($safeName);
+    }
+}
 $qrPagoGeneral = 'assets/img/qr-bancario.jpeg';
 ?>
 <!doctype html>
@@ -128,13 +144,15 @@ $qrPagoGeneral = 'assets/img/qr-bancario.jpeg';
 
             <?php if ($compra['comprobante_nombre']): ?>
                 <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem">
-                    <?php if (preg_match('/\.(jpg|jpeg|png|webp)$/i', $compra['comprobante_nombre'])): ?>
-                        <img class="receipt-preview" src="<?= e($comprobanteUrl) ?>" alt="Comprobante">
-                    <?php else: ?>
-                        <div class="receipt-pdf">PDF</div>
-                    <?php endif; ?>
+                        <?php if (preg_match('/\.(jpg|jpeg|png|webp)$/i', $compra['comprobante_nombre']) && $fileExists): ?>
+                            <img class="receipt-preview" src="<?= e($comprobanteUrl) ?>" alt="Comprobante">
+                        <?php elseif (preg_match('/\.(jpg|jpeg|png|webp)$/i', $compra['comprobante_nombre']) && !$fileExists): ?>
+                            <div class="receipt-pdf">Imagen no disponible</div>
+                        <?php else: ?>
+                            <div class="receipt-pdf"><?php if ($fileExists) echo 'PDF'; else echo 'Comprobante no disponible'; ?></div>
+                        <?php endif; ?>
                 </div>
-                <button class="btn btn-ghost btn-block" type="button" data-receipt-open data-receipt-url="<?= e($comprobanteUrl) ?>" data-receipt-kind="<?= preg_match('/\.(jpg|jpeg|png|webp)$/i', $compra['comprobante_nombre']) ? 'image' : 'pdf' ?>">Ver comprobante completo</button>
+                    <button class="btn btn-ghost btn-block" type="button" data-receipt-open data-receipt-url="<?= e($comprobanteUrl) ?>" data-receipt-kind="<?= preg_match('/\.(jpg|jpeg|png|webp)$/i', $compra['comprobante_nombre']) ? 'image' : 'pdf' ?>" data-receipt-exists="<?= $fileExists ? '1' : '0' ?>">Ver comprobante completo</button>
                 <p class="text-muted text-sm mt-2">Puedes reemplazarlo si subiste el archivo incorrecto.</p>
             <?php endif; ?>
 

@@ -262,8 +262,22 @@ const rContent=document.getElementById('receiptModalContent');
 const closeReceipt=()=>{if(!rModal)return;rModal.classList.remove('is-open');document.body.style.overflow='';setTimeout(()=>{if(rContent)rContent.innerHTML='';},200);};
 document.querySelectorAll('[data-receipt-open]').forEach(btn=>{
   btn.addEventListener('click',()=>{
-    if(!rModal||!rContent)return;const url=btn.dataset.receiptUrl||'';const kind=btn.dataset.receiptKind;
-    rContent.innerHTML=kind==='image'?`<img class="receipt-modal-media" src="${url}" alt="Comprobante">`:`<iframe class="receipt-modal-media" src="${url}" title="Comprobante"></iframe>`;
+    if(!rModal||!rContent)return;
+    const url = btn.dataset.receiptUrl || '';
+    const kind = btn.dataset.receiptKind;
+    const exists = btn.dataset.receiptExists === '1';
+    if (!exists) {
+      rContent.innerHTML = '<div class="p-3">El comprobante no está disponible en el servidor.</div>';
+      rModal.classList.add('is-open');document.body.style.overflow='hidden';return;
+    }
+    if (kind === 'image') {
+      rContent.innerHTML = `<img class="receipt-modal-media" src="${url}" alt="Comprobante">`;
+    } else {
+      // PDF preview with fallback button
+      const iframeHtml = `<iframe class="receipt-modal-media" src="${url}" title="Comprobante" frameborder="0"></iframe>`;
+      const openBtn = `<div style="margin-top:.75rem;text-align:right"><a class="btn btn-ghost" href="${url}" target="_blank" rel="noopener">Abrir PDF en nueva pestaña</a></div>`;
+      rContent.innerHTML = iframeHtml + openBtn;
+    }
     rModal.classList.add('is-open');document.body.style.overflow='hidden';
   });
 });

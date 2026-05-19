@@ -136,17 +136,36 @@ admin_header(admin_is_vendor() ? 'Validar mis pagos' : 'Validar pagos');
             </form>
         </div>
         <?php
-        $receiptUrl = '../uploads/comprobantes/pendientes/' . rawurlencode($compra['comprobante_nombre']);
-        $ext = strtolower(pathinfo($compra['comprobante_nombre'], PATHINFO_EXTENSION));
+        $safeName = basename((string) ($compra['comprobante_nombre'] ?? ''));
+        $receiptUrl = '';
+        $fileExists = false;
+        $ext = strtolower(pathinfo($safeName, PATHINFO_EXTENSION));
         $isImg = in_array($ext, ['jpg','jpeg','png','webp']);
+        if ($safeName !== '') {
+            $dirs = ['pendientes', 'verificados', 'rechazados'];
+            foreach ($dirs as $d) {
+                $path = UPLOAD_PATH . '/comprobantes/' . $d . '/' . $safeName;
+                if (is_file($path)) {
+                    $receiptUrl = '../uploads/comprobantes/' . $d . '/' . rawurlencode($safeName);
+                    $fileExists = true;
+                    break;
+                }
+            }
+            // fallback: point to pendientes URL even if file missing (will be handled in modal)
+            if ($receiptUrl === '') {
+                $receiptUrl = '../uploads/comprobantes/pendientes/' . rawurlencode($safeName);
+            }
+        }
         ?>
         <div class="flex items-center gap-2 mt-2">
-            <?php if ($isImg): ?>
+            <?php if ($isImg && $fileExists): ?>
                 <img class="receipt-preview" src="<?= e($receiptUrl) ?>" alt="Comprobante">
+            <?php elseif ($isImg && !$fileExists): ?>
+                <div class="receipt-pdf">Imagen no disponible</div>
             <?php else: ?>
-                <div class="receipt-pdf">PDF</div>
+                <div class="receipt-pdf"><?php if ($fileExists) echo 'PDF'; else echo 'Comprobante no disponible'; ?></div>
             <?php endif; ?>
-            <button class="btn btn-ghost btn-sm" type="button" data-receipt-open data-receipt-url="<?= e($receiptUrl) ?>" data-receipt-kind="<?= $isImg?'image':'pdf' ?>">Ver completo</button>
+            <button class="btn btn-ghost btn-sm" type="button" data-receipt-open data-receipt-url="<?= e($receiptUrl) ?>" data-receipt-kind="<?= $isImg?'image':'pdf' ?>" data-receipt-exists="<?= $fileExists ? '1' : '0' ?>">Ver completo</button>
         </div>
     </div>
     <?php endforeach; ?>
