@@ -1,11 +1,30 @@
 <?php
-require __DIR__ . '/_bootstrap.php';
+require_once __DIR__ . '/_bootstrap.php';
 $pdo = Database::getConnection();
 
-function mover_comprobante(string $archivo, string $destino): void {
-    $origen = UPLOAD_PATH . '/comprobantes/pendientes/' . basename($archivo);
-    $final = UPLOAD_PATH . '/comprobantes/' . $destino . '/' . basename($archivo);
-    if (is_file($origen)) rename($origen, $final);
+function mover_comprobante(string $archivo, string $destino): bool {
+    $nombre = basename($archivo);
+    if ($nombre === '') {
+        return false;
+    }
+
+    $origen = UPLOAD_PATH . '/comprobantes/pendientes/' . $nombre;
+    $directorioDestino = UPLOAD_PATH . '/comprobantes/' . trim($destino, '/');
+    $final = $directorioDestino . '/' . $nombre;
+
+    if (is_file($final)) {
+        return true; // Ya fue movido previamente.
+    }
+
+    if (!is_dir($directorioDestino) && !mkdir($directorioDestino, 0775, true) && !is_dir($directorioDestino)) {
+        return false;
+    }
+
+    if (!is_file($origen)) {
+        return false;
+    }
+
+    return rename($origen, $final);
 }
 
 $filtroVendedorId = admin_view_vendor_id();
