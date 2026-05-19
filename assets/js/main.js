@@ -167,15 +167,49 @@ const fileInput=document.getElementById('receiptInput');
 const preview=document.getElementById('receiptPreview');
 const uploadZone=document.querySelector('.upload-zone');
 if(fileInput&&preview){
+  const fileError=document.querySelector('[data-file-error]');
+  const fileName=document.querySelector('[data-file-name]');
+  const fileMeta=document.querySelector('[data-file-meta]');
+  const fileBadge=document.querySelector('[data-file-badge]');
+  const formatFileSize=bytes=>{
+    if(!bytes)return'0 KB';
+    const units=['B','KB','MB'];
+    let size=bytes;
+    let unit=0;
+    while(size>=1024&&unit<units.length-1){size/=1024;unit++;}
+    return(size>=10||unit===0?size.toFixed(0):size.toFixed(1))+' '+units[unit];
+  };
   const handleFile=f=>{
-    if(f&&f.type.startsWith('image/')){preview.src=URL.createObjectURL(f);if(uploadZone)uploadZone.classList.add('has-image');}
+    if(fileError)fileError.style.display='none';
+    if(!f)return;
+    if(uploadZone)uploadZone.classList.remove('has-image','has-file');
+    const ext=(f.name.split('.').pop()||'FILE').slice(0,4).toUpperCase();
+    if(fileName)fileName.textContent=f.name||'Comprobante seleccionado';
+    if(fileMeta)fileMeta.textContent=(f.type||'Comprobante')+' - '+formatFileSize(f.size||0);
+    if(fileBadge)fileBadge.textContent=ext;
+    if(f.type.startsWith('image/')){
+      preview.src=URL.createObjectURL(f);
+      if(uploadZone)uploadZone.classList.add('has-image');
+    }else{
+      preview.removeAttribute('src');
+      if(uploadZone)uploadZone.classList.add('has-file');
+    }
   };
   fileInput.addEventListener('change',()=>handleFile(fileInput.files[0]));
   document.querySelectorAll('[data-file-submit]').forEach(btn=>btn.addEventListener('click',e=>{
     const target=document.getElementById(btn.dataset.fileSubmit||'');
     if(target&&target.type==='file'&&!target.files.length){
       e.preventDefault();
+      if(fileError)fileError.style.display='block';
       target.click();
+    }
+  }));
+  document.querySelectorAll('[data-receipt-form]').forEach(form=>form.addEventListener('submit',e=>{
+    if(!fileInput.files.length){
+      e.preventDefault();
+      e.stopPropagation();
+      if(fileError)fileError.style.display='block';
+      fileInput.click();
     }
   }));
   if(uploadZone){

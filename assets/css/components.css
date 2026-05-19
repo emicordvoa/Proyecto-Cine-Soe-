@@ -53,8 +53,18 @@
 .upload-zone{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:240px;border:2px dashed rgba(255,255,255,.2);border-radius:var(--r-xl);cursor:pointer;transition:all .25s;padding:2rem;text-align:center;color:var(--muted)}
 .upload-zone:hover,.upload-zone.dragover{border-color:var(--cyan);background:rgba(53,215,210,.06);transform:translateY(-2px)}
 .upload-zone .upload-icon{font-size:2.5rem;margin-bottom:.8rem;opacity:.6}
+.upload-zone .upload-icon-doc{position:relative;display:inline-flex;align-items:center;justify-content:center;width:58px;height:72px;border:1px solid rgba(255,255,255,.2);border-radius:10px;background:rgba(255,255,255,.08);color:#fff;font-size:.82rem;font-weight:900;letter-spacing:.08em;opacity:1}
+.upload-zone .upload-icon-doc::after{content:"";position:absolute;right:-1px;top:-1px;border-top:18px solid rgba(53,215,210,.45);border-left:18px solid transparent;border-radius:0 10px 0 0}
+.upload-file-card{display:none;align-items:center;gap:.9rem;width:min(100%,420px);padding:1rem;border:1px solid rgba(53,215,210,.35);border-radius:var(--r-md);background:rgba(53,215,210,.08);box-shadow:0 12px 30px rgba(0,0,0,.18);text-align:left}
+.upload-file-badge{flex:0 0 auto;min-width:58px;padding:.5rem .6rem;border-radius:9px;background:linear-gradient(135deg,var(--purple),var(--cyan));color:#fff;font-weight:900;text-align:center;letter-spacing:.04em}
+.upload-file-info{min-width:0}
+.upload-file-info strong{display:block;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.upload-file-info small{display:block;color:var(--muted)}
 .upload-zone img{max-height:200px;object-fit:contain;border-radius:var(--r-md);display:none}
-.upload-zone.has-image span,.upload-zone.has-image small,.upload-zone.has-image .upload-icon{display:none}
+.upload-zone.has-file > .upload-icon,.upload-zone.has-file > span:not(.upload-icon),.upload-zone.has-file > small{display:none}
+.upload-zone.has-file .upload-file-card{display:flex}
+.upload-zone.has-file img{display:none}
+.upload-zone.has-image > span,.upload-zone.has-image > small,.upload-zone.has-image > .upload-icon,.upload-zone.has-image .upload-file-card{display:none}
 .upload-zone.has-image img{display:block}
 
 /* Bank info */

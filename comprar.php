@@ -94,6 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <a href="index.php" class="checkout-back">← Volver a cartelera</a>
 
     <div class="glass checkout-panel">
+        
         <p class="section-eyebrow">Compra segura</p>
         <h1>Reserva tus entradas</h1>
         <p class="text-muted text-sm mb-3">Tienes 10 minutos para subir el comprobante despues de reservar.</p>
@@ -173,12 +174,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Codigo Staff SOE (opcional)</label>
+                        <label class="form-label">Código Equipo SOE (opcional)</label>
                         <input class="form-input" type="text" name="codigo_vendedor" value="<?= e($codigoSugerido) ?>" placeholder="Ej: A7F3E8D9" autocomplete="off" style="text-transform: uppercase;">
                     </div>
                 </div>
                 <div class="flex gap-2">
-                    <button type="button" class="btn btn-ghost btn-lg" data-step-prev>← Atras</button>
+                    <button type="button" class="btn btn-ghost btn-lg" data-step-prev>← Atrás</button>
                     <button type="button" class="btn btn-primary btn-lg" style="flex:1" data-step-next>Siguiente →</button>
                 </div>
             </div>
@@ -193,7 +194,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <span class="total-amount" id="totalPrice2">Bs 0.00</span>
                 </div>
                 <div class="flex gap-2">
-                    <button type="button" class="btn btn-ghost btn-lg" data-step-prev><- Atras</button>
+                    <button type="button" class="btn btn-ghost btn-lg" data-step-prev>← Atrás</button>
                     <button class="btn btn-primary btn-lg" style="flex:1" type="submit">Confirmar Compra</button>
                 </div>
             </div>
