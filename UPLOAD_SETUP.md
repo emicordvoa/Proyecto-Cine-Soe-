@@ -7,9 +7,9 @@ El sistema requiere que existan las siguientes carpetas con permisos de escritur
 ```
 uploads/
 ├── comprobantes/
-│   ├── pendientes/        (0755 o 0775)
-│   ├── aprobados/         (0755 o 0775)
-│   └── rechazados/        (0755 o 0775)
+│   ├── pendientes/        (comprobantes en espera de validación)
+│   ├── verificados/       (comprobantes aprobados)
+│   └── rechazados/        (comprobantes rechazados)
 ├── qr/                    (0755 o 0775)
 ├── qr-pagos/              (0755 o 0775)
 └── tickets/               (0755 o 0775)
@@ -25,7 +25,7 @@ Accede al panel SSH/Terminal de EasyPanel y ejecuta:
 cd /app
 
 # Crear carpeta uploads si no existe
-mkdir -p uploads/comprobantes/{pendientes,aprobados,rechazados}
+mkdir -p uploads/comprobantes/{pendientes,verificados,rechazados}
 mkdir -p uploads/qr
 mkdir -p uploads/qr-pagos
 mkdir -p uploads/tickets
@@ -34,7 +34,7 @@ mkdir -p uploads/tickets
 chmod -R 0775 uploads/
 chmod -R 0775 uploads/comprobantes/
 chmod -R 0775 uploads/comprobantes/pendientes/
-chmod -R 0775 uploads/comprobantes/aprobados/
+chmod -R 0775 uploads/comprobantes/verificados/
 chmod -R 0775 uploads/comprobantes/rechazados/
 
 # Si es necesario, cambiar propietario (opcional, si da permisos denied)
@@ -122,7 +122,7 @@ Donde `ROOT_PATH` es el directorio raíz del proyecto. En EasyPanel, típicament
 
 **Rutas finales:**
 - Comprobantes pendientes: `/app/uploads/comprobantes/pendientes/`
-- Comprobantes aprobados: `/app/uploads/comprobantes/aprobados/`
+- Comprobantes verificados (aprobados): `/app/uploads/comprobantes/verificados/`
 - Comprobantes rechazados: `/app/uploads/comprobantes/rechazados/`
 
 ## Permisos recomendados

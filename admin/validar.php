@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ->execute([(int) $compra['cantidad_entradas'], (int) $compra['id_pelicula'], (int) $compra['cantidad_entradas']]);
             }
             $pdo->commit();
-            mover_comprobante($compra['comprobante_nombre'], 'aprobados');
+            mover_comprobante($compra['comprobante_nombre'], 'verificados');
             $_SESSION['wa_cliente_tickets'] = Notificacion::enviarWhatsAppCliente($compra['telefono'] ?? '', $tokens);
             $_SESSION['tickets_generados_compra'] = (int) $compra['id'];
             flash('success', 'Pago aprobado. Entradas generadas.');
